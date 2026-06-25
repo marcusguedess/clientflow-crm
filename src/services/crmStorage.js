@@ -8,10 +8,8 @@ export function loadLeads(fallback = []) {
     const storedValue = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_KEY)
     if (!storedValue) return sanitizeLeadList(fallback, fallback)
     const storedLeads = sanitizeLeadList(JSON.parse(storedValue), fallback)
-    const isOriginalDemo =
-      storedLeads.length <= 8 &&
-      storedLeads.every((lead) => /^lead-00[1-8]$/.test(lead.id))
-    return isOriginalDemo
+    const isDemoPortfolio = storedLeads.every((lead) => /^lead-\d{3}$/.test(lead.id))
+    return isDemoPortfolio
       ? [...storedLeads, ...fallback.filter((lead) => !storedLeads.some((stored) => stored.id === lead.id))]
       : storedLeads
   } catch (error) {

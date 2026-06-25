@@ -365,7 +365,7 @@ export default function App() {
             />
           )}
 
-          {activeView === 'performance' && <PerformanceDashboard leads={leads} employees={employees} tasks={tasks} />}
+          {activeView === 'performance' && <PerformanceDashboard leads={leads} employees={employees} tasks={tasks} onNavigate={setActiveView} />}
 
           {activeView === 'pipeline' && (
             <section className="pipeline-section">

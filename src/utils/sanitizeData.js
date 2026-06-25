@@ -67,14 +67,15 @@ export function sanitizeLeadList(value, fallback = []) {
 }
 
 export function sanitizeEmployees(value, fallback = []) {
-  if (!Array.isArray(value) || value.length !== fallback.length) return fallback
+  if (!Array.isArray(value)) return fallback
   const allowedStatuses = new Set(['online', 'ocupado', 'ausente'])
   const allowedAccessories = new Set(['none', 'glasses', 'headset', 'cap', 'hat'])
   const allowedHair = new Set(['short', 'long', 'curly', 'bun', 'mohawk', 'afro', 'braids', 'sidecut'])
   const allowedOutfits = new Set(['shirt', 'suit', 'blazer', 'dress', 'skirt', 'jacket', 'hoodie', 'vest', 'overalls'])
-  return value.map((employee, index) => {
-    const base = fallback[index]
-    if (!employee || employee.id !== base.id) return base
+  const storedById = new Map(value.map((employee) => [employee?.id, employee]))
+  return fallback.map((base) => {
+    const employee = storedById.get(base.id)
+    if (!employee) return base
     return {
       ...base,
       nome: cleanText(employee.nome, 80) || base.nome,
@@ -125,7 +126,7 @@ export function sanitizeTasks(value, fallback = []) {
   if (!Array.isArray(value)) return fallback
   const statuses = new Set(['Planejado', 'Em andamento', 'Em revisão', 'Concluído'])
   const priorities = new Set(['Baixa', 'Média', 'Alta'])
-  return value.slice(0, 500).map((task) => ({
+  const tasks = value.slice(0, 500).map((task) => ({
     id: cleanText(task?.id, 80) || globalThis.crypto.randomUUID(),
     title: cleanText(task?.title, 100),
     description: cleanText(task?.description, 300),
@@ -136,4 +137,8 @@ export function sanitizeTasks(value, fallback = []) {
     sticker: cleanText(task?.sticker, 8) || '📌',
     relatedLeadId: cleanText(task?.relatedLeadId, 80),
   })).filter((task) => task.title)
+  const isDemoBoard = tasks.every((task) => /^task-\d+$/.test(task.id))
+  return isDemoBoard
+    ? [...tasks, ...fallback.filter((task) => !tasks.some((stored) => stored.id === task.id))]
+    : tasks
 }

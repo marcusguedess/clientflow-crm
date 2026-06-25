@@ -11,6 +11,13 @@ const periods = {
   '90d': { label: '90 dias', factor: 1.34 },
 }
 
+const dashboardProfiles = {
+  executive: { label: 'Executivo', description: 'Receita, risco e previsibilidade' },
+  manager: { label: 'Gestão', description: 'Equipe, cadência e gargalos' },
+  seller: { label: 'Minha carteira', description: 'Prioridades e próximos passos' },
+  customer: { label: 'Clientes', description: 'Retenção, expansão e atendimento' },
+}
+
 const chartLabels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Hoje']
 
 function buildSeries(base, factor) {
@@ -73,13 +80,16 @@ function AreaChart({ values, selectedIndex, onSelect }) {
   )
 }
 
-export default function PerformanceDashboard({ leads, employees, tasks = [] }) {
+export default function PerformanceDashboard({ leads, employees, tasks = [], onNavigate }) {
   const [period, setPeriod] = useState('30d')
   const [selectedPoint, setSelectedPoint] = useState(6)
   const [rankingMode, setRankingMode] = useState('score')
   const [ownerFilter, setOwnerFilter] = useState('Todos')
   const [statusFilter, setStatusFilter] = useState('Todos')
   const [sourceFilter, setSourceFilter] = useState('Todos')
+  const [profile, setProfile] = useState('executive')
+  const [filtersOpen, setFiltersOpen] = useState(true)
+  const [comparison, setComparison] = useState('previous')
 
   const filterOptions = useMemo(() => ({
     owners: ['Todos', ...employees.map((employee) => employee.nome)],
@@ -149,9 +159,57 @@ export default function PerformanceDashboard({ leads, employees, tasks = [] }) {
   const stalled = filteredLeads.filter((lead) => ['Novo Lead', 'Contato Feito'].includes(lead.status) && Number(lead.valorEstimado || 0) >= 10000)
   const bestOwner = performance[0]
   const bestSource = sourceData[0]
-  const overdueTasks = tasks.filter((task) => task.dueDate && new Date(`${task.dueDate}T23:59:59`) < new Date())
-  const urgentTasks = tasks.filter((task) => task.priority === 'Alta')
-  const activeTasks = tasks.filter((task) => ['Planejado', 'Em andamento', 'Aguardando'].includes(task.status))
+  const overdueTasks = tasks.filter((task) => task.status !== 'Concluído' && task.dueDate && new Date(`${task.dueDate}T23:59:59`) < new Date())
+  const urgentTasks = tasks.filter((task) => task.priority === 'Alta' && task.status !== 'Concluído')
+  const activeTasks = tasks.filter((task) => ['Planejado', 'Em andamento', 'Em revisão'].includes(task.status))
+  const lostReasons = useMemo(() => {
+    const reasons = filteredLeads
+      .filter((lead) => lead.status === 'Perdido')
+      .reduce((result, lead) => ({ ...result, [lead.motivoPerda || 'Sem motivo registrado']: (result[lead.motivoPerda || 'Sem motivo registrado'] || 0) + 1 }), {})
+    return Object.entries(reasons).sort((a, b) => b[1] - a[1]).slice(0, 4)
+  }, [filteredLeads])
+  const decisionQueue = useMemo(() => {
+    const proposals = filteredLeads.filter((lead) => lead.status === 'Proposta')
+    const noNextStep = filteredLeads.filter((lead) => !['Fechado', 'Perdido'].includes(lead.status) && !lead.proximoPasso)
+    const closingSoon = filteredLeads.filter((lead) => lead.previsaoFechamento && !['Fechado', 'Perdido'].includes(lead.status) && new Date(`${lead.previsaoFechamento}T23:59:59`) <= new Date(Date.now() + 14 * 86_400_000))
+    const clients = filteredLeads.filter((lead) => lead.status === 'Fechado')
+    const clientIds = new Set(clients.map((lead) => lead.id))
+    const clientTasks = tasks.filter((task) => clientIds.has(task.relatedLeadId) && task.status !== 'Concluído')
+    const clientsWithoutTask = clients.filter((lead) => !tasks.some((task) => task.relatedLeadId === lead.id && task.status !== 'Concluído'))
+    const enterpriseClients = clients.filter((lead) => lead.segmento === 'Enterprise')
+
+    const queues = {
+      executive: [
+        { id: 'stalled', label: 'Risco no pipeline', value: stalled.length, detail: 'Alto valor ainda nas etapas iniciais', tone: 'warning', view: 'pipeline', target: 'Contato Feito' },
+        { id: 'proposal', label: 'Receita em proposta', value: formatCurrency(proposals.reduce((sum, lead) => sum + Number(lead.valorEstimado || 0), 0)), detail: 'Valor que depende de decisão próxima', tone: 'violet', view: 'pipeline', target: 'Proposta' },
+        { id: 'overdue', label: 'Execução atrasada', value: overdueTasks.length, detail: 'Pendências comerciais vencidas', tone: 'danger', view: 'tasks' },
+        { id: 'coverage', label: 'Cobertura da meta', value: `${coverage}%`, detail: 'Receita ganha somada ao pipeline', tone: 'blue', view: 'analytics' },
+      ],
+      manager: [
+        { id: 'active', label: 'Trabalho em curso', value: activeTasks.length, detail: 'Tarefas planejadas ou em execução', tone: 'blue', view: 'tasks' },
+        { id: 'urgent', label: 'Prioridades altas', value: urgentTasks.length, detail: 'Itens que exigem coordenação do gestor', tone: 'danger', view: 'tasks' },
+        { id: 'stalled', label: 'Carteiras estagnadas', value: stalled.length, detail: 'Oportunidades para redistribuir ou destravar', tone: 'warning', view: 'pipeline' },
+        { id: 'no-step', label: 'Sem próxima ação', value: noNextStep.length, detail: 'Cobrar continuidade e qualidade do registro', tone: 'violet', view: 'leads' },
+      ],
+      seller: [
+        { id: 'proposal', label: 'Propostas abertas', value: proposals.length, detail: 'Negócios prontos para follow-up', tone: 'violet', view: 'pipeline', target: 'Proposta' },
+        { id: 'closing', label: 'Fechamento em 14 dias', value: closingSoon.length, detail: 'Proteja agenda, decisor e data de retorno', tone: 'warning', view: 'pipeline' },
+        { id: 'no-step', label: 'Sem próxima ação', value: noNextStep.length, detail: 'Registre o próximo compromisso da carteira', tone: 'danger', view: 'leads' },
+        { id: 'tasks', label: 'Minhas prioridades', value: urgentTasks.length, detail: 'Trabalho de alta prioridade no Flowboard', tone: 'blue', view: 'tasks' },
+      ],
+      customer: [
+        { id: 'clients', label: 'Clientes ativos', value: clients.length, detail: 'Contas conquistadas na seleção', tone: 'blue', view: 'clients' },
+        { id: 'handoff', label: 'Passagens em curso', value: clientTasks.length, detail: 'Onboarding e continuidade pós-venda', tone: 'violet', view: 'tasks' },
+        { id: 'uncovered', label: 'Clientes sem tarefa', value: clientsWithoutTask.length, detail: 'Contas sem acompanhamento operacional', tone: 'warning', view: 'clients' },
+        { id: 'enterprise', label: 'Clientes enterprise', value: enterpriseClients.length, detail: 'Contas estratégicas para expansão', tone: 'green', view: 'clients' },
+      ],
+    }
+    return queues[profile]
+  }, [activeTasks.length, coverage, filteredLeads, overdueTasks.length, profile, stalled.length, tasks, urgentTasks.length])
+  const comparisonLabel = comparison === 'previous' ? 'vs. período anterior' : 'vs. meta'
+  const revenueDelta = comparison === 'previous'
+    ? Math.round(((metrics.revenue - metrics.revenue / periods[period].factor) / Math.max(metrics.revenue / periods[period].factor, 1)) * 100)
+    : Math.round(((metrics.revenue - goal) / goal) * 100)
 
   return (
     <section className="performance-dashboard">
@@ -159,24 +217,41 @@ export default function PerformanceDashboard({ leads, employees, tasks = [] }) {
         <div>
           <span className="eyebrow">Cockpit comercial</span>
           <h2>Resultados em movimento</h2>
+          <p>{dashboardProfiles[profile].description}</p>
         </div>
-        <div className="period-tabs" aria-label="Período do dashboard">
-          {Object.entries(periods).map(([key, item]) => (
-            <button key={key} className={period === key ? 'is-active' : ''} onClick={() => setPeriod(key)}>{item.label}</button>
-          ))}
+        <div className="dashboard-control-bar__actions">
+          <div className="dashboard-profile-tabs" aria-label="Perspectiva do dashboard">
+            {Object.entries(dashboardProfiles).map(([key, item]) => (
+              <button key={key} className={profile === key ? 'is-active' : ''} type="button" onClick={() => setProfile(key)} title={item.description}>{item.label}</button>
+            ))}
+          </div>
+          <div className="period-tabs" aria-label="Período do dashboard">
+            {Object.entries(periods).map(([key, item]) => (
+              <button key={key} className={period === key ? 'is-active' : ''} type="button" onClick={() => setPeriod(key)}>{item.label}</button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="dashboard-filter-bar" aria-label="Filtros do dashboard">
-        <label><span>Responsável</span><select value={ownerFilter} onChange={(event) => setOwnerFilter(event.target.value)}>{filterOptions.owners.map((item) => <option key={item}>{item}</option>)}</select></label>
-        <label><span>Etapa</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>{filterOptions.statuses.map((item) => <option key={item}>{item}</option>)}</select></label>
-        <label><span>Origem</span><select value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value)}>{filterOptions.sources.map((item) => <option key={item}>{item}</option>)}</select></label>
-        <button type="button" onClick={() => { setOwnerFilter('Todos'); setStatusFilter('Todos'); setSourceFilter('Todos') }}>Limpar filtros</button>
-      </div>
+      <section className={`dashboard-filters ${filtersOpen ? 'is-open' : ''}`}>
+        <header>
+          <div><strong>Explorar dados</strong><small>{filteredLeads.length} de {leads.length} oportunidades na análise</small></div>
+          <button type="button" onClick={() => setFiltersOpen((current) => !current)} aria-expanded={filtersOpen}>{filtersOpen ? 'Recolher filtros' : 'Abrir filtros'}</button>
+        </header>
+        {filtersOpen && (
+          <div className="dashboard-filter-bar" aria-label="Filtros do dashboard">
+            <label><span>Responsável</span><select value={ownerFilter} onChange={(event) => setOwnerFilter(event.target.value)}>{filterOptions.owners.map((item) => <option key={item}>{item}</option>)}</select></label>
+            <label><span>Etapa</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>{filterOptions.statuses.map((item) => <option key={item}>{item}</option>)}</select></label>
+            <label><span>Origem</span><select value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value)}>{filterOptions.sources.map((item) => <option key={item}>{item}</option>)}</select></label>
+            <label><span>Comparar</span><select value={comparison} onChange={(event) => setComparison(event.target.value)}><option value="previous">Período anterior</option><option value="goal">Meta mensal</option></select></label>
+            <button type="button" onClick={() => { setOwnerFilter('Todos'); setStatusFilter('Todos'); setSourceFilter('Todos') }}>Limpar filtros</button>
+          </div>
+        )}
+      </section>
 
       <div className="executive-strip">
         <div className="metric-glow metric-glow--blue"><small>Carteira filtrada</small><strong>{filteredLeads.length}</strong><span>oportunidades na visão</span><b>{Math.round((filteredLeads.length / Math.max(leads.length, 1)) * 100)}%</b></div>
-        <div className="metric-glow metric-glow--green"><small>Fechamentos</small><strong>{metrics.won}</strong><span>{formatCurrency(metrics.revenue)}</span><b>{conversion}% conv.</b></div>
+        <div className="metric-glow metric-glow--green"><small>Fechamentos</small><strong>{metrics.won}</strong><span>{formatCurrency(metrics.revenue)}</span><b>{revenueDelta >= 0 ? '+' : ''}{revenueDelta}% {comparisonLabel}</b></div>
         <div className="metric-glow metric-glow--red"><small>Risco aberto</small><strong>{stalled.length}</strong><span>leads quentes parados</span><b>Priorizar</b></div>
         <div className="metric-glow metric-glow--violet"><small>Forecast</small><strong>{formatCurrency(weightedForecast)}</strong><span>{coverage}% de cobertura da meta</span><b>{formatCurrency(metrics.averageTicket)}</b></div>
       </div>
@@ -187,6 +262,31 @@ export default function PerformanceDashboard({ leads, employees, tasks = [] }) {
         <div><span>Atrasadas</span><strong>{overdueTasks.length}</strong><small>Datas vencidas</small></div>
         <div><span>Melhor canal</span><strong>{bestSource ? bestSource[0] : 'N/A'}</strong><small>Maior tração comercial</small></div>
       </div>
+
+      <section className="decision-center">
+        <header>
+          <div><span className="eyebrow">Fila de decisão</span><h2>O que precisa acontecer agora</h2></div>
+          <span className="decision-center__profile">{dashboardProfiles[profile].label}</span>
+        </header>
+        <div className="decision-center__grid">
+          {decisionQueue.map((item) => (
+            <button
+              key={item.id}
+              className={`decision-card decision-card--${item.tone}`}
+              type="button"
+              onClick={() => {
+                if (item.target) setStatusFilter(item.target)
+                onNavigate?.(item.view)
+              }}
+            >
+              <span>{item.label}</span>
+              <strong>{item.value}</strong>
+              <small>{item.detail}</small>
+              <i>Abrir área →</i>
+            </button>
+          ))}
+        </div>
+      </section>
 
       <section className="dashboard-briefing">
         <div>
@@ -280,6 +380,19 @@ export default function PerformanceDashboard({ leads, employees, tasks = [] }) {
             <div><b>02</b><span><strong>Leads parados</strong><small>Reativar oportunidades acima de R$ 10 mil em contato inicial.</small></span></div>
             <div><b>03</b><span><strong>Canais fortes</strong><small>Duplicar campanha nos canais com maior ticket médio.</small></span></div>
           </div>
+        </article>
+
+        <article className="loss-reasons-panel">
+          <header><span className="eyebrow">Aprendizado comercial</span><h2>Motivos de perda</h2></header>
+          {lostReasons.length ? (
+            <div className="loss-reasons-list">
+              {lostReasons.map(([reason, count]) => (
+                <div key={reason}><span>{reason}</span><strong>{count}</strong></div>
+              ))}
+            </div>
+          ) : (
+            <p>Nenhuma perda na seleção atual. Amplie o período ou remova filtros.</p>
+          )}
         </article>
       </div>
 

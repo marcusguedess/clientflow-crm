@@ -37,7 +37,7 @@ export default function DashboardHome({
   const activeEmployees = employees.filter((employee) => employee.status !== 'offline')
   const openLeads = leads.filter((lead) => !['Fechado', 'Perdido'].includes(lead.status))
   const recentLeads = openLeads.slice(0, 4)
-  const urgentTasks = tasks.filter((task) => task.prioridade === 'Alta' && task.status !== 'Concluído').length
+  const urgentTasks = tasks.filter((task) => task.priority === 'Alta' && task.status !== 'Concluído').length
 
   return (
     <div className="dashboard-home">
