@@ -49,8 +49,8 @@ export function sanitizeEmployees(value, fallback = []) {
   if (!Array.isArray(value) || value.length !== fallback.length) return fallback
   const allowedStatuses = new Set(['online', 'ocupado', 'ausente'])
   const allowedAccessories = new Set(['none', 'glasses', 'headset', 'cap', 'hat'])
-  const allowedHair = new Set(['short', 'long', 'curly', 'bun', 'mohawk'])
-  const allowedOutfits = new Set(['shirt', 'suit', 'blazer', 'dress', 'skirt', 'jacket'])
+  const allowedHair = new Set(['short', 'long', 'curly', 'bun', 'mohawk', 'afro', 'braids', 'sidecut'])
+  const allowedOutfits = new Set(['shirt', 'suit', 'blazer', 'dress', 'skirt', 'jacket', 'hoodie', 'vest', 'overalls'])
   return value.map((employee, index) => {
     const base = fallback[index]
     if (!employee || employee.id !== base.id) return base

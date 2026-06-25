@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import EmployeeProfile from './components/EmployeeProfile'
 import ActivitiesPage from './components/ActivitiesPage'
+import AnalyticsHub from './components/AnalyticsHub'
 import ClientsPage from './components/ClientsPage'
 import FloatingChat from './components/FloatingChat'
 import Header from './components/Header'
 import LeadCard from './components/LeadCard'
 import LeadForm from './components/LeadForm'
+import LeadIntelligence from './components/LeadIntelligence'
 import OfficeCity from './components/OfficeCity'
 import PipelineBoard from './components/PipelineBoard'
 import PerformanceDashboard from './components/PerformanceDashboard'
@@ -15,6 +17,7 @@ import Sidebar from './components/Sidebar'
 import StatCard from './components/StatCard'
 import TaskBoard from './components/TaskBoard'
 import TeamHub from './components/TeamHub'
+import ThemeStudio from './components/ThemeStudio'
 import Toast from './components/Toast'
 import { seedLeads } from './data/seedData'
 import { seedEmployees, seedMessages, seedPosts } from './data/teamData'
@@ -33,6 +36,7 @@ import {
   sanitizeTasks,
 } from './utils/sanitizeData'
 import { decryptBackup, encryptBackup } from './utils/secureBackup'
+import { playSound } from './utils/soundEffects'
 
 function MetricIcon({ type }) {
   const paths = {
@@ -75,6 +79,10 @@ export default function App() {
   const [profileEmployee, setProfileEmployee] = useState(null)
   const [teamContactId, setTeamContactId] = useState(null)
   const [privacyMode, setPrivacyMode] = useState(false)
+  const [theme, setTheme] = usePersistentState('clientflow-theme-v1', 'aurora', (value) =>
+    ['aurora', 'sunset', 'ocean', 'lime'].includes(value) ? value : 'aurora',
+  )
+  const [soundEnabled, setSoundEnabled] = usePersistentState('clientflow-sound-v1', true, (value) => value !== false)
   const actionLogRef = useRef({})
   const currentEmployee = employees[0]
 
@@ -262,6 +270,16 @@ export default function App() {
     setRespectState((current) => ({ ...current, remaining: current.remaining - 1 }))
   }
 
+  function callAttention(employee) {
+    playSound('attention', soundEnabled)
+    document.documentElement.classList.remove('attention-shake')
+    window.requestAnimationFrame(() => {
+      document.documentElement.classList.add('attention-shake')
+      window.setTimeout(() => document.documentElement.classList.remove('attention-shake'), 650)
+    })
+    setToast({ message: `${employee.nome.split(' ')[0]} recebeu um toque de atenção.` })
+  }
+
   function createTask(task) {
     setTasks((current) => [{ ...task, id: globalThis.crypto.randomUUID() }, ...current])
     setToast({ message: 'Tarefa criada no Flowboard.' })
@@ -333,13 +351,14 @@ export default function App() {
       clients: { title: 'Clientes', subtitle: 'Acompanhe contas conquistadas e o contexto do relacionamento.' },
       activities: { title: 'Atividades', subtitle: 'Histórico comercial, pendências e próximos passos.' },
       tasks: { title: 'Flowboard', subtitle: 'Organize o trabalho comercial em um quadro visual.' },
+      analytics: { title: 'Relatórios', subtitle: 'Analise leads, clientes, receita e perdas com mais contexto.' },
       security: { title: 'Dados & segurança', subtitle: 'Proteja, exporte e restaure os dados locais do workspace.' },
       team: { title: 'Fluxora · Equipe online', subtitle: 'Messenger e mural local para o espaço virtual da empresa.' },
       city: { title: 'Fluxora · ClientFlow City', subtitle: 'Explore setores, perfis e a presença virtual da equipe.' },
     }[activeView])
 
   return (
-    <div className={`app-shell ${privacyMode ? 'privacy-mode' : ''}`}>
+    <div className={`app-shell theme-${theme} ${privacyMode ? 'privacy-mode' : ''}`}>
       <Sidebar
         activeView={activeView}
         onViewChange={setActiveView}
@@ -455,6 +474,7 @@ export default function App() {
 
           {activeView === 'leads' && (
             <section className="directory-section">
+              <LeadIntelligence leads={leads} activeStatus={statusFilter} onSelectStatus={setStatusFilter} />
               <div className="section-heading">
                 <div><span className="eyebrow">CRM</span><h2>Diretório comercial</h2></div>
                 <span className="result-count">{filteredLeads.length} registros</span>
@@ -500,6 +520,7 @@ export default function App() {
               employees={employees}
               onSelectEmployee={setProfileEmployee}
               onCityEvent={(message) => setToast({ message })}
+              onSound={(name) => playSound(name, soundEnabled)}
             />
           )}
 
@@ -520,6 +541,8 @@ export default function App() {
           {activeView === 'tasks' && (
             <TaskBoard tasks={tasks} employees={employees} onCreate={createTask} onMove={moveTask} onDelete={deleteTask} />
           )}
+
+          {activeView === 'analytics' && <AnalyticsHub leads={leads} employees={employees} />}
         </div>
       </main>
 
@@ -572,10 +595,12 @@ export default function App() {
           onRespect={giveRespect}
           socialStats={socialStats[profileEmployee.id]}
           respectsLeft={respectState.remaining}
+          onAttention={callAttention}
         />
       )}
 
       <FloatingChat employees={employees} onOpenTeam={() => setActiveView('team')} />
+      <ThemeStudio theme={theme} onChange={(nextTheme) => { playSound('click', soundEnabled); setTheme(nextTheme) }} soundEnabled={soundEnabled} onToggleSound={() => setSoundEnabled((current) => !current)} />
       <button
         className={`privacy-toggle ${privacyMode ? 'is-active' : ''}`}
         onClick={() => setPrivacyMode((current) => !current)}

@@ -8,7 +8,7 @@ Uma transmissão especial chegou ao terminal:
                  .-.
                 /___\
                 |o o|
-                | O |        Olá, Magdanello!
+                | O |        Olá, Magdanello! Boca de fossa!
                /|___|\
           ____/ /   \ \____   Que a Força acompanhe
          /_____/|   |\_____\  suas contribuições.

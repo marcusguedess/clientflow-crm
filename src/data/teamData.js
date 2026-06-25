@@ -2,8 +2,8 @@ export const avatarOptions = {
   skin: ['#f2c7a5', '#d99b72', '#a96848', '#70422f'],
   hair: ['#34251f', '#70442d', '#c98b3d', '#252b3a', '#a84b3f'],
   shirt: ['#315ed9', '#36a77b', '#9b63ce', '#e47b46', '#de5366'],
-  hairStyle: ['short', 'long', 'curly', 'bun', 'mohawk'],
-  outfit: ['shirt', 'suit', 'blazer', 'dress', 'skirt', 'jacket'],
+  hairStyle: ['short', 'long', 'curly', 'bun', 'mohawk', 'afro', 'braids', 'sidecut'],
+  outfit: ['shirt', 'suit', 'blazer', 'dress', 'skirt', 'jacket', 'hoodie', 'vest', 'overalls'],
   accessory: ['none', 'glasses', 'headset', 'cap', 'hat'],
 }
 

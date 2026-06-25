@@ -22,6 +22,9 @@ export default function PixelAvatar({ avatar, size = 48, animated = false }) {
       {hairStyle === 'curly' && <><rect x="8" y="2" width="5" height="5" fill={hair} /><rect x="13" y="1" width="6" height="6" fill={hair} /><rect x="19" y="3" width="6" height="5" fill={hair} /><rect x="6" y="6" width="5" height="5" fill={hair} /></>}
       {hairStyle === 'bun' && <><rect x="8" y="4" width="16" height="5" fill={hair} /><rect x="13" y="0" width="7" height="5" fill={hair} /></>}
       {hairStyle === 'mohawk' && <><rect x="14" y="0" width="5" height="8" fill={hair} /><rect x="10" y="5" width="13" height="4" fill={hair} /></>}
+      {hairStyle === 'afro' && <><circle cx="9" cy="6" r="5" fill={hair} /><circle cx="16" cy="4" r="6" fill={hair} /><circle cx="23" cy="6" r="5" fill={hair} /><rect x="7" y="6" width="18" height="5" fill={hair} /></>}
+      {hairStyle === 'braids' && <><rect x="8" y="3" width="16" height="6" fill={hair} /><rect x="5" y="8" width="3" height="15" fill={hair} /><rect x="24" y="8" width="3" height="15" fill={hair} /><rect x="4" y="21" width="5" height="3" fill={hair} /><rect x="23" y="21" width="5" height="3" fill={hair} /></>}
+      {hairStyle === 'sidecut' && <><rect x="12" y="2" width="12" height="7" fill={hair} /><rect x="9" y="5" width="5" height="4" fill={hair} /></>}
       <rect x="7" y="8" width="18" height="10" fill={skin} />
       <rect x="7" y="7" width="4" height="7" fill={hair} />
       <rect x="21" y="7" width="4" height="6" fill={hair} />
@@ -41,6 +44,9 @@ export default function PixelAvatar({ avatar, size = 48, animated = false }) {
       {outfit === 'dress' && <><path d="M10 19h12l4 11H6Z" fill={shirt} /><rect x="14" y="19" width="4" height="4" fill="#f8d8e8" /></>}
       {outfit === 'skirt' && <><rect x="8" y="19" width="16" height="6" fill={shirt} /><path d="M10 24h12l3 6H7Z" fill={shirt} /></>}
       {outfit === 'jacket' && <><rect x="8" y="19" width="16" height="11" fill={shirt} /><rect x="15" y="19" width="2" height="11" fill="#f0d095" /><rect x="9" y="22" width="4" height="2" fill="#29344b" /><rect x="19" y="22" width="4" height="2" fill="#29344b" /></>}
+      {outfit === 'hoodie' && <><rect x="8" y="19" width="16" height="11" fill={shirt} /><rect x="11" y="18" width="10" height="5" rx="2" fill={shirt} /><rect x="15" y="20" width="1" height="6" fill="#f4f5f7" /><rect x="18" y="20" width="1" height="6" fill="#f4f5f7" /></>}
+      {outfit === 'vest' && <><rect x="8" y="19" width="16" height="11" fill="#f4f5f7" /><rect x="8" y="19" width="6" height="11" fill={shirt} /><rect x="18" y="19" width="6" height="11" fill={shirt} /><rect x="15" y="22" width="2" height="2" fill="#27334b" /></>}
+      {outfit === 'overalls' && <><rect x="8" y="19" width="16" height="11" fill="#f0d4a2" /><rect x="11" y="21" width="10" height="9" fill={shirt} /><rect x="11" y="19" width="3" height="5" fill={shirt} /><rect x="18" y="19" width="3" height="5" fill={shirt} /></>}
       <rect x="9" y="29" width="6" height="2" fill="#26334d" />
       <rect x="17" y="29" width="6" height="2" fill="#26334d" />
       {accessory === 'glasses' && (

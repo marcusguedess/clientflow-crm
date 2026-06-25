@@ -50,6 +50,10 @@ function ClientIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3" /><path d="M3 20c0-3 2.5-6 6-6s6 3 6 6M16 8h5M18.5 5.5v5" /></svg>
 }
 
+function ReportIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10h4v10M10 20V4h4v16M16 20v-7h4v7M3 20h18" /></svg>
+}
+
 export default function Sidebar({ activeView, onViewChange, isOpen, onClose, currentEmployee, onProfile }) {
   const crmItems = [
     { id: 'dashboard', label: 'Visão geral', icon: <GridIcon /> },
@@ -58,6 +62,7 @@ export default function Sidebar({ activeView, onViewChange, isOpen, onClose, cur
     { id: 'clients', label: 'Clientes', icon: <ClientIcon /> },
     { id: 'activities', label: 'Atividades', icon: <ActivityIcon /> },
     { id: 'tasks', label: 'Flowboard', icon: <CheckIcon /> },
+    { id: 'analytics', label: 'Relatórios', icon: <ReportIcon /> },
     { id: 'security', label: 'Dados & segurança', icon: <ShieldIcon /> },
   ]
   const fluxoraItems = [

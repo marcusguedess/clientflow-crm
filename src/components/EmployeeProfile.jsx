@@ -11,6 +11,7 @@ export default function EmployeeProfile({
   onRespect,
   socialStats,
   respectsLeft,
+  onAttention,
 }) {
   if (!employee) return null
 
@@ -43,6 +44,7 @@ export default function EmployeeProfile({
               <button className="button button--respect" disabled={!respectsLeft} onClick={() => onRespect?.(employee.id)}>
                 ★ Respeito ({respectsLeft})
               </button>
+              <button className="button button--attention" onClick={() => onAttention?.(employee)}>🔔 Chamar atenção</button>
             </div>
           )}
 
@@ -72,6 +74,9 @@ export default function EmployeeProfile({
                   <option value="curly">Cacheado</option>
                   <option value="bun">Coque</option>
                   <option value="mohawk">Moicano</option>
+                  <option value="afro">Afro</option>
+                  <option value="braids">Tranças</option>
+                  <option value="sidecut">Sidecut</option>
                 </select>
               </label>
               <label>
@@ -83,6 +88,9 @@ export default function EmployeeProfile({
                   <option value="dress">Vestido</option>
                   <option value="skirt">Saia</option>
                   <option value="jacket">Jaqueta</option>
+                  <option value="hoodie">Moletom</option>
+                  <option value="vest">Colete</option>
+                  <option value="overalls">Macacão</option>
                 </select>
               </label>
               <label>
