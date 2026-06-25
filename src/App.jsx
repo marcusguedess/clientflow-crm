@@ -2,13 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import EmployeeProfile from './components/EmployeeProfile'
 import ActivitiesPage from './components/ActivitiesPage'
 import AnalyticsHub from './components/AnalyticsHub'
-import BusinessCommandCenter from './components/BusinessCommandCenter'
 import ClientsPage from './components/ClientsPage'
 import CommercialWorkspace from './components/CommercialWorkspace'
+import DashboardHome from './components/DashboardHome'
 import FloatingChat from './components/FloatingChat'
 import Header from './components/Header'
 import MessengerPage from './components/MessengerPage'
-import LeadCard from './components/LeadCard'
 import LeadForm from './components/LeadForm'
 import OfficeCity from './components/OfficeCity'
 import PipelineBoard from './components/PipelineBoard'
@@ -16,17 +15,16 @@ import PerformanceDashboard from './components/PerformanceDashboard'
 import SearchBar from './components/SearchBar'
 import SecurityCenter from './components/SecurityCenter'
 import Sidebar from './components/Sidebar'
-import StatCard from './components/StatCard'
 import TaskBoard from './components/TaskBoard'
 import TeamHub from './components/TeamHub'
 import ThemeStudio from './components/ThemeStudio'
 import Toast from './components/Toast'
+import { viewCopy } from './app/navigation'
 import { seedLeads } from './data/seedData'
 import { seedEmployees, seedMessages, seedPosts } from './data/teamData'
 import { seedActivities, seedTasks } from './data/workData'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import { usePersistentState } from './hooks/usePersistentState'
-import { formatCurrency } from './utils/formatCurrency'
 import { calculateLeadStats } from './utils/leadStats'
 import {
   cleanText,
@@ -39,21 +37,6 @@ import {
 } from './utils/sanitizeData'
 import { decryptBackup, encryptBackup } from './utils/secureBackup'
 import { playSound } from './utils/soundEffects'
-
-function findEmployeeByName(employees, name) {
-  return employees.find((employee) => employee.nome === name) || employees[0]
-}
-
-function MetricIcon({ type }) {
-  const paths = {
-    leads: <><circle cx="9" cy="8" r="3" /><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 5.5a3 3 0 0 1 0 5.8M17 15c2.3.4 4 2.4 4 5" /></>,
-    value: <><path d="M12 2v20M17 6.5c0-1.4-2.2-2.5-5-2.5S7 5.1 7 6.5 9.2 9 12 9s5 1.1 5 2.5S14.8 14 12 14s-5 1.1-5 2.5S9.2 19 12 19s5-1.1 5-2.5" /></>,
-    won: <><circle cx="12" cy="12" r="9" /><path d="m8 12 2.5 2.5L16 9" /></>,
-    rate: <><path d="M4 19 19 4M7.5 5.5h.01M16.5 17.5h.01" /><circle cx="7.5" cy="5.5" r="2.5" /><circle cx="16.5" cy="17.5" r="2.5" /></>,
-  }
-
-  return <svg viewBox="0 0 24 24" aria-hidden="true">{paths[type]}</svg>
-}
 
 export default function App() {
   const [leads, setLeads] = useLocalStorage(seedLeads)
@@ -350,21 +333,6 @@ export default function App() {
     window.location.reload()
   }
 
-  const viewCopy =
-    ({
-      dashboard: { title: 'Visão geral', subtitle: 'Acompanhe o desempenho e as oportunidades do seu time.' },
-      pipeline: { title: 'Pipeline comercial', subtitle: 'Visualize cada oportunidade e avance seus leads pelo funil.' },
-      leads: { title: 'Comercial', subtitle: 'Leads, contas, contatos e oportunidades conectados em um fluxo B2B.' },
-      clients: { title: 'Clientes', subtitle: 'Acompanhe contas conquistadas e o contexto do relacionamento.' },
-      activities: { title: 'Atividades', subtitle: 'Histórico comercial, pendências e próximos passos.' },
-      tasks: { title: 'Flowboard', subtitle: 'Organize o trabalho comercial em um quadro visual.' },
-      analytics: { title: 'Relatórios', subtitle: 'Analise leads, clientes, receita e perdas com mais contexto.' },
-      security: { title: 'Dados & segurança', subtitle: 'Proteja, exporte e restaure os dados locais do workspace.' },
-      team: { title: 'Fluxora · Equipe online', subtitle: 'Messenger e mural local para o espaço virtual da empresa.' },
-      messenger: { title: 'Flow Messenger', subtitle: 'Bate-papo interno por pessoa, grupo e setor.' },
-      city: { title: 'Fluxora · ClientFlow City', subtitle: 'Explore setores, perfis e a presença virtual da equipe.' },
-    }[activeView])
-
   return (
     <div className={`app-shell theme-${theme} ${privacyMode ? 'privacy-mode' : ''}`}>
       <Sidebar
@@ -378,7 +346,7 @@ export default function App() {
 
       <main className="main-content">
         <Header
-          {...viewCopy}
+          {...viewCopy[activeView]}
           onNewLead={openNewLead}
           onOpenMenu={() => setIsSidebarOpen(true)}
           showNewLead={['dashboard', 'pipeline', 'leads', 'clients'].includes(activeView)}
@@ -386,80 +354,18 @@ export default function App() {
 
         <div className="content-area">
           {activeView === 'dashboard' && (
-            <>
-              <section className="stats-grid" aria-label="Métricas do CRM">
-                <StatCard
-                  label="Total de leads"
-                  value={stats.total}
-                  detail="oportunidades cadastradas"
-                  tone="blue"
-                  icon={<MetricIcon type="leads" />}
-                />
-                <StatCard
-                  label="Em negociação"
-                  value={formatCurrency(stats.valorNegociacao)}
-                  detail="pipeline em aberto"
-                  tone="violet"
-                  icon={<MetricIcon type="value" />}
-                />
-                <StatCard
-                  label="Leads ganhos"
-                  value={stats.ganhos}
-                  detail="negócios fechados"
-                  tone="green"
-                  icon={<MetricIcon type="won" />}
-                />
-                <StatCard
-                  label="Taxa de conversão"
-                  value={`${stats.conversao}%`}
-                  detail="ganhos entre concluídos"
-                  tone="orange"
-                  icon={<MetricIcon type="rate" />}
-                />
-              </section>
-
-              <BusinessCommandCenter leads={leads} tasks={tasks} />
-
-              <PerformanceDashboard leads={leads} employees={employees} tasks={tasks} />
-
-              <section className="leads-section">
-                <div className="section-heading">
-                  <div>
-                    <span className="eyebrow">Base comercial</span>
-                    <h2>Leads recentes</h2>
-                  </div>
-                  <button className="button button--text" onClick={resetDemo}>
-                    Restaurar carteira inicial
-                  </button>
-                </div>
-                <SearchBar
-                  query={query}
-                  onQueryChange={setQuery}
-                  status={statusFilter}
-                  onStatusChange={setStatusFilter}
-                />
-                <div className="leads-grid">
-                  {filteredLeads.length ? (
-                    filteredLeads.map((lead) => (
-                      <LeadCard
-                        key={lead.id}
-                        lead={lead}
-                        owner={findEmployeeByName(employees, lead.responsavel)}
-                        onEdit={openEditLead}
-                        onDelete={setDeleteTarget}
-                        onStatusChange={changeLeadStatus}
-                      />
-                    ))
-                  ) : (
-                    <div className="empty-state">
-                      <strong>Nenhum lead encontrado</strong>
-                      <span>Ajuste a busca ou o filtro para ver outros resultados.</span>
-                    </div>
-                  )}
-                </div>
-              </section>
-            </>
+            <DashboardHome
+              stats={stats}
+              leads={leads}
+              tasks={tasks}
+              employees={employees}
+              currentEmployee={currentEmployee}
+              onNavigate={setActiveView}
+              onEditLead={openEditLead}
+            />
           )}
+
+          {activeView === 'performance' && <PerformanceDashboard leads={leads} employees={employees} tasks={tasks} />}
 
           {activeView === 'pipeline' && (
             <section className="pipeline-section">

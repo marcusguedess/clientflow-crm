@@ -1,5 +1,6 @@
 import Logo from './Logo'
 import PixelAvatar from './PixelAvatar'
+import { navigationGroups } from '../app/navigation'
 
 function GridIcon() {
   return (
@@ -58,23 +59,26 @@ function ReportIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10h4v10M10 20V4h4v16M16 20v-7h4v7M3 20h18" /></svg>
 }
 
-export default function Sidebar({ activeView, onViewChange, isOpen, onClose, currentEmployee, onProfile }) {
-  const crmItems = [
-    { id: 'dashboard', label: 'Visão geral', icon: <GridIcon /> },
-    { id: 'pipeline', label: 'Pipeline', icon: <PipelineIcon /> },
-    { id: 'leads', label: 'Comercial', icon: <ListIcon /> },
-    { id: 'clients', label: 'Clientes', icon: <ClientIcon /> },
-    { id: 'activities', label: 'Atividades', icon: <ActivityIcon /> },
-    { id: 'tasks', label: 'Flowboard', icon: <CheckIcon /> },
-    { id: 'analytics', label: 'Relatórios', icon: <ReportIcon /> },
-    { id: 'security', label: 'Dados & segurança', icon: <ShieldIcon /> },
-  ]
-  const fluxoraItems = [
-    { id: 'team', label: 'Equipe', icon: <PeopleIcon /> },
-    { id: 'messenger', label: 'Mensageira', icon: <ChatIcon /> },
-    { id: 'city', label: 'ClientFlow City', icon: <CityIcon /> },
-  ]
+function CockpitIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V9M10 18V5M16 18v-7M3 20h18" /><circle cx="19" cy="6" r="2" /></svg>
+}
 
+const icons = {
+  activity: <ActivityIcon />,
+  chat: <ChatIcon />,
+  city: <CityIcon />,
+  clients: <ClientIcon />,
+  cockpit: <CockpitIcon />,
+  grid: <GridIcon />,
+  list: <ListIcon />,
+  people: <PeopleIcon />,
+  pipeline: <PipelineIcon />,
+  reports: <ReportIcon />,
+  shield: <ShieldIcon />,
+  tasks: <CheckIcon />,
+}
+
+export default function Sidebar({ activeView, onViewChange, isOpen, onClose, currentEmployee, onProfile }) {
   return (
     <>
       <aside className={`sidebar ${isOpen ? 'sidebar--open' : ''}`}>
@@ -86,33 +90,23 @@ export default function Sidebar({ activeView, onViewChange, isOpen, onClose, cur
         </div>
 
         <nav className="sidebar__nav" aria-label="Navegação principal">
-          <span className="sidebar__label">CRM</span>
-          {crmItems.map((item) => (
-            <button
-              key={item.id}
-              className={`sidebar__link ${activeView === item.id ? 'is-active' : ''}`}
-              onClick={() => {
-                onViewChange(item.id)
-                onClose()
-              }}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </button>
-          ))}
-          <span className="sidebar__label sidebar__label--space">Fluxora</span>
-          {fluxoraItems.map((item) => (
-            <button
-              key={item.id}
-              className={`sidebar__link sidebar__link--fluxora ${activeView === item.id ? 'is-active' : ''}`}
-              onClick={() => {
-                onViewChange(item.id)
-                onClose()
-              }}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </button>
+          {navigationGroups.map((group, groupIndex) => (
+            <div className="sidebar__group" key={group.id}>
+              <span className={`sidebar__label ${groupIndex ? 'sidebar__label--space' : ''}`}>{group.label}</span>
+              {group.items.map((item) => (
+                <button
+                  key={item.id}
+                  className={`sidebar__link ${group.id === 'world' ? 'sidebar__link--fluxora' : ''} ${activeView === item.id ? 'is-active' : ''}`}
+                  onClick={() => {
+                    onViewChange(item.id)
+                    onClose()
+                  }}
+                >
+                  {icons[item.icon]}
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </div>
           ))}
         </nav>
 

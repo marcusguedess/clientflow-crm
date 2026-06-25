@@ -195,9 +195,11 @@ export default function ThreeShowcase({ statusHealth, employees }) {
       observer.observe(mount)
       resize()
 
-      const clock = new THREE.Clock()
-      function animate() {
-        const elapsed = clock.getElapsedTime()
+      const timer = new THREE.Timer()
+      timer.connect(document)
+      function animate(timestamp) {
+        timer.update(timestamp)
+        const elapsed = timer.getElapsed()
         const spin = mode === 'revenue' ? 0.15 : mode === 'pipeline' ? 0.08 : mode === 'team' ? 0.05 : 0.1
         group.rotation.y = Math.sin(elapsed * 0.28) * spin + pointerDrift.x
         group.rotation.x = pointerDrift.y
@@ -220,6 +222,7 @@ export default function ThreeShowcase({ statusHealth, employees }) {
 
       return () => {
         window.cancelAnimationFrame(animationFrame)
+        timer.dispose()
         mount.removeEventListener('pointerdown', handlePointer)
         mount.removeEventListener('pointermove', handlePointerMove)
         observer?.disconnect()
