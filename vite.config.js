@@ -1,7 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig(() => ({
   plugins: [react()],
-  base: mode === 'github-pages' ? '/clientflow-crm/' : '/',
+  base: '/',
+  build: {
+    chunkSizeWarningLimit: 650,
+  },
 }))

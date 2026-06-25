@@ -8,7 +8,7 @@ export default function Header({ title, subtitle, onNewLead, onOpenMenu, showNew
           </svg>
         </button>
         <div>
-          <div className="header-title-row"><h1>{title}</h1><span className="development-badge">Em desenvolvimento</span></div>
+          <div className="header-title-row"><h1>{title}</h1></div>
           <p>{subtitle}</p>
         </div>
       </div>

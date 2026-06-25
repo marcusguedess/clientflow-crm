@@ -11,6 +11,7 @@ import LeadIntelligence from './components/LeadIntelligence'
 import OfficeCity from './components/OfficeCity'
 import PipelineBoard from './components/PipelineBoard'
 import PerformanceDashboard from './components/PerformanceDashboard'
+import PixelAvatar from './components/PixelAvatar'
 import SearchBar from './components/SearchBar'
 import SecurityCenter from './components/SecurityCenter'
 import Sidebar from './components/Sidebar'
@@ -37,6 +38,10 @@ import {
 } from './utils/sanitizeData'
 import { decryptBackup, encryptBackup } from './utils/secureBackup'
 import { playSound } from './utils/soundEffects'
+
+function findEmployeeByName(employees, name) {
+  return employees.find((employee) => employee.nome === name) || employees[0]
+}
 
 function MetricIcon({ type }) {
   const paths = {
@@ -80,7 +85,7 @@ export default function App() {
   const [teamContactId, setTeamContactId] = useState(null)
   const [privacyMode, setPrivacyMode] = useState(false)
   const [theme, setTheme] = usePersistentState('clientflow-theme-v1', 'aurora', (value) =>
-    ['aurora', 'sunset', 'ocean', 'lime'].includes(value) ? value : 'aurora',
+    ['aurora', 'sunset', 'ocean', 'lime', 'neon', 'candy', 'executive', 'arcade'].includes(value) ? value : 'aurora',
   )
   const [soundEnabled, setSoundEnabled] = usePersistentState('clientflow-sound-v1', true, (value) => value !== false)
   const actionLogRef = useRef({})
@@ -201,11 +206,11 @@ export default function App() {
   }
 
   function resetDemo() {
-    if (window.confirm(`Restaurar os ${seedLeads.length} registros de demonstração? Seus dados atuais serão substituídos.`)) {
+    if (window.confirm(`Restaurar a carteira inicial com ${seedLeads.length} registros? Seus dados atuais serão substituídos.`)) {
       setLeads(seedLeads.map((lead) => ({ ...lead })))
       setQuery('')
       setStatusFilter('Todos')
-      setToast({ message: 'Dados de demonstração restaurados.' })
+      setToast({ message: 'Carteira inicial restaurada.' })
     }
   }
 
@@ -322,6 +327,7 @@ export default function App() {
 
   async function importBackup(file, password) {
     try {
+      if (!file.name.toLowerCase().endsWith('.cfbackup')) throw new Error('Extensão de arquivo inválida.')
       if (file.size > 1_000_000) throw new Error('O arquivo excede o limite de 1 MB.')
       const data = await decryptBackup(await file.text(), password)
       if (data?.schemaVersion !== 1) throw new Error('Versão de backup incompatível.')
@@ -419,7 +425,7 @@ export default function App() {
                     <h2>Leads recentes</h2>
                   </div>
                   <button className="button button--text" onClick={resetDemo}>
-                    Restaurar dados demo
+                    Restaurar carteira inicial
                   </button>
                 </div>
                 <SearchBar
@@ -434,6 +440,7 @@ export default function App() {
                       <LeadCard
                         key={lead.id}
                         lead={lead}
+                        owner={findEmployeeByName(employees, lead.responsavel)}
                         onEdit={openEditLead}
                         onDelete={setDeleteTarget}
                         onStatusChange={changeLeadStatus}
@@ -460,11 +467,12 @@ export default function App() {
                   onStatusChange={setStatusFilter}
                 />
                 <button className="button button--text" onClick={resetDemo}>
-                  Restaurar dados demo
+                  Restaurar carteira inicial
                 </button>
               </div>
               <PipelineBoard
                 leads={filteredLeads}
+                employees={employees}
                 onEdit={openEditLead}
                 onDelete={setDeleteTarget}
                 onStatusChange={changeLeadStatus}
@@ -488,7 +496,12 @@ export default function App() {
                       <tr key={lead.id}>
                         <td><strong>{lead.nome}</strong><small className="sensitive-data">{lead.empresa} · {lead.email}</small></td>
                         <td><select value={lead.status} onChange={(event) => changeLeadStatus(lead.id, event.target.value)}>{['Novo Lead','Contato Feito','Reunião','Proposta','Fechado','Perdido'].map((status) => <option key={status}>{status}</option>)}</select></td>
-                        <td>{lead.responsavel || 'Não definido'}</td>
+                        <td>
+                          <span className="owner-cell">
+                            <PixelAvatar avatar={findEmployeeByName(employees, lead.responsavel).avatar} size={28} animated />
+                            {lead.responsavel || 'Não definido'}
+                          </span>
+                        </td>
                         <td>{lead.origem || 'Não informada'}</td>
                         <td><strong>{formatCurrency(lead.valorEstimado)}</strong></td>
                         <td><button className="table-action" onClick={() => openEditLead(lead)}>Editar</button></td>
@@ -534,7 +547,7 @@ export default function App() {
             />
           )}
 
-          {activeView === 'clients' && <ClientsPage leads={leads} onEdit={openEditLead} />}
+          {activeView === 'clients' && <ClientsPage leads={leads} employees={employees} onEdit={openEditLead} />}
 
           {activeView === 'activities' && <ActivitiesPage activities={seedActivities} tasks={tasks} />}
 
@@ -549,6 +562,7 @@ export default function App() {
       {isFormOpen && (
         <LeadForm
           lead={editingLead}
+          employees={employees}
           onSave={saveLead}
           onClose={() => {
             setIsFormOpen(false)

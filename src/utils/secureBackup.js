@@ -1,6 +1,7 @@
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
 const ITERATIONS = 210_000
+const MAX_BACKUP_PAYLOAD_BYTES = 1_000_000
 
 function bytesToBase64(bytes) {
   let binary = ''
@@ -9,6 +10,9 @@ function bytesToBase64(bytes) {
 }
 
 function base64ToBytes(value) {
+  if (typeof value !== 'string' || !/^[A-Za-z0-9+/]+={0,2}$/.test(value)) {
+    throw new Error('Backup corrompido.')
+  }
   const binary = atob(value)
   return Uint8Array.from(binary, (char) => char.charCodeAt(0))
 }
@@ -25,7 +29,7 @@ async function deriveKey(password, salt) {
 }
 
 export async function encryptBackup(data, password) {
-  if (password.length < 10) throw new Error('Use uma senha com pelo menos 10 caracteres.')
+  if (password.length < 12) throw new Error('Use uma senha com pelo menos 12 caracteres.')
   const salt = crypto.getRandomValues(new Uint8Array(16))
   const iv = crypto.getRandomValues(new Uint8Array(12))
   const key = await deriveKey(password, salt)
@@ -44,13 +48,21 @@ export async function encryptBackup(data, password) {
 }
 
 export async function decryptBackup(content, password) {
+  if (content.length > MAX_BACKUP_PAYLOAD_BYTES) throw new Error('Arquivo de backup muito grande.')
   const backup = JSON.parse(content)
   if (backup?.format !== 'clientflow-encrypted-backup' || backup?.version !== 1) {
     throw new Error('Formato de backup inválido.')
   }
+  if (backup.algorithm !== 'AES-GCM-256' || backup.kdf !== 'PBKDF2-SHA256' || backup.iterations !== ITERATIONS) {
+    throw new Error('Parâmetros criptográficos incompatíveis.')
+  }
   const salt = base64ToBytes(backup.salt)
   const iv = base64ToBytes(backup.iv)
+  const encryptedData = base64ToBytes(backup.data)
+  if (salt.length !== 16 || iv.length !== 12 || encryptedData.length < 16) {
+    throw new Error('Backup corrompido.')
+  }
   const key = await deriveKey(password, salt)
-  const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, base64ToBytes(backup.data))
+  const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, encryptedData)
   return JSON.parse(decoder.decode(decrypted))
 }

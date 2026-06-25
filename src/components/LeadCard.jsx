@@ -1,8 +1,9 @@
 import { PIPELINE_STATUSES } from '../data/seedData'
 import { formatCurrency } from '../utils/formatCurrency'
+import PixelAvatar from './PixelAvatar'
 import StatusBadge from './StatusBadge'
 
-export default function LeadCard({ lead, onEdit, onDelete, onStatusChange, compact = false }) {
+export default function LeadCard({ lead, owner, onEdit, onDelete, onStatusChange, compact = false }) {
   const initials = lead.nome
     .split(' ')
     .slice(0, 2)
@@ -13,10 +14,11 @@ export default function LeadCard({ lead, onEdit, onDelete, onStatusChange, compa
     <article className={`lead-card ${compact ? 'lead-card--compact' : ''}`}>
       <div className="lead-card__header">
         <div className="lead-card__person">
-          <span className="lead-avatar">{initials}</span>
+          {owner?.avatar ? <PixelAvatar avatar={owner.avatar} size={42} animated /> : <span className="lead-avatar">{initials}</span>}
           <div>
             <strong>{lead.nome}</strong>
             <span>{lead.empresa}</span>
+            {owner?.nome && <small className="lead-owner">Resp. {owner.nome}</small>}
           </div>
         </div>
         <div className="lead-card__actions">

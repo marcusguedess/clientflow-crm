@@ -13,7 +13,7 @@ const emptyLead = {
   notas: '',
 }
 
-export default function LeadForm({ lead, onSave, onClose }) {
+export default function LeadForm({ lead, employees = [], onSave, onClose }) {
   const [formData, setFormData] = useState(emptyLead)
 
   useEffect(() => {
@@ -102,12 +102,14 @@ export default function LeadForm({ lead, onSave, onClose }) {
             </label>
             <label>
               <span>Responsável</span>
-              <input
+              <select
                 name="responsavel"
                 value={formData.responsavel}
                 onChange={updateField}
-                placeholder="Ex.: Ana Lima"
-              />
+              >
+                <option value="">Selecionar responsável</option>
+                {employees.map((employee) => <option key={employee.id} value={employee.nome}>{employee.nome} · {employee.cargo}</option>)}
+              </select>
             </label>
             <label className="form-grid__wide">
               <span>Notas</span>

@@ -11,7 +11,11 @@ const columnTone = {
   Perdido: 'lost',
 }
 
-export default function PipelineBoard({ leads, onEdit, onDelete, onStatusChange }) {
+function findEmployeeByName(employees, name) {
+  return employees.find((employee) => employee.nome === name) || employees[0]
+}
+
+export default function PipelineBoard({ leads, employees = [], onEdit, onDelete, onStatusChange }) {
   return (
     <div className="pipeline-board">
       {PIPELINE_STATUSES.map((status) => {
@@ -37,6 +41,7 @@ export default function PipelineBoard({ leads, onEdit, onDelete, onStatusChange 
                   <LeadCard
                     key={lead.id}
                     lead={lead}
+                    owner={findEmployeeByName(employees, lead.responsavel)}
                     compact
                     onEdit={onEdit}
                     onDelete={onDelete}

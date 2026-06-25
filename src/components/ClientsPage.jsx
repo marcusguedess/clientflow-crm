@@ -1,10 +1,16 @@
 import { useState } from 'react'
 import { formatCurrency } from '../utils/formatCurrency'
+import PixelAvatar from './PixelAvatar'
 import StatusBadge from './StatusBadge'
 
-export default function ClientsPage({ leads, onEdit }) {
+function findEmployeeByName(employees, name) {
+  return employees.find((employee) => employee.nome === name) || employees[0]
+}
+
+export default function ClientsPage({ leads, employees = [], onEdit }) {
   const clients = leads.filter((lead) => lead.status === 'Fechado')
   const [selected, setSelected] = useState(clients[0] || null)
+  const selectedOwner = selected ? findEmployeeByName(employees, selected.responsavel) : null
 
   return (
     <section className="clients-page">
@@ -16,7 +22,7 @@ export default function ClientsPage({ leads, onEdit }) {
         <div className="client-list">
           {clients.map((client) => (
             <button className={selected?.id === client.id ? 'client-list-card is-active' : 'client-list-card'} key={client.id} onClick={() => setSelected(client)}>
-              <span>{client.nome.split(' ').map((part) => part[0]).slice(0, 2).join('')}</span>
+              <PixelAvatar avatar={findEmployeeByName(employees, client.responsavel).avatar} size={38} animated />
               <div><strong>{client.empresa}</strong><small>{client.nome}</small></div>
               <b>{formatCurrency(client.valorEstimado)}</b>
             </button>
@@ -25,7 +31,7 @@ export default function ClientsPage({ leads, onEdit }) {
         {selected ? (
           <article className="client-detail">
             <div className="client-detail__hero">
-              <span className="client-detail__avatar">{selected.empresa.slice(0, 2).toUpperCase()}</span>
+              {selectedOwner?.avatar && <PixelAvatar avatar={selectedOwner.avatar} size={58} animated />}
               <div><span className="eyebrow">Conta ativa</span><h2>{selected.empresa}</h2><p className="sensitive-data">{selected.nome} · {selected.email}</p></div>
               <StatusBadge status={selected.status} />
             </div>

@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import { formatCurrency } from '../utils/formatCurrency'
 import PixelAvatar from './PixelAvatar'
+
+const ThreeShowcase = lazy(() => import('./ThreeShowcase'))
 
 const periods = {
   '7d': { label: '7 dias', factor: 0.72 },
@@ -74,33 +76,82 @@ export default function PerformanceDashboard({ leads, employees }) {
   const [period, setPeriod] = useState('30d')
   const [selectedPoint, setSelectedPoint] = useState(6)
   const [rankingMode, setRankingMode] = useState('score')
+  const [ownerFilter, setOwnerFilter] = useState('Todos')
+  const [statusFilter, setStatusFilter] = useState('Todos')
+  const [sourceFilter, setSourceFilter] = useState('Todos')
+
+  const filterOptions = useMemo(() => ({
+    owners: ['Todos', ...employees.map((employee) => employee.nome)],
+    statuses: ['Todos', ...new Set(leads.map((lead) => lead.status))],
+    sources: ['Todos', ...new Set(leads.map((lead) => lead.origem || 'Outros'))],
+  }), [employees, leads])
+
+  const filteredLeads = useMemo(() => leads.filter((lead) =>
+    (ownerFilter === 'Todos' || lead.responsavel === ownerFilter) &&
+    (statusFilter === 'Todos' || lead.status === statusFilter) &&
+    (sourceFilter === 'Todos' || (lead.origem || 'Outros') === sourceFilter),
+  ), [leads, ownerFilter, statusFilter, sourceFilter])
 
   const metrics = useMemo(() => {
-    const won = leads.filter((lead) => lead.status === 'Fechado')
-    const lost = leads.filter((lead) => lead.status === 'Perdido')
-    const newLeads = leads.filter((lead) => lead.status === 'Novo Lead')
+    const won = filteredLeads.filter((lead) => lead.status === 'Fechado')
+    const lost = filteredLeads.filter((lead) => lead.status === 'Perdido')
+    const newLeads = filteredLeads.filter((lead) => lead.status === 'Novo Lead')
     const revenue = won.reduce((sum, lead) => sum + Number(lead.valorEstimado || 0), 0)
-    const pipeline = leads.filter((lead) => !['Fechado', 'Perdido'].includes(lead.status)).reduce((sum, lead) => sum + Number(lead.valorEstimado || 0), 0)
-    return { won: won.length, lost: lost.length, newLeads: newLeads.length, revenue, pipeline }
-  }, [leads])
+    const open = filteredLeads.filter((lead) => !['Fechado', 'Perdido'].includes(lead.status))
+    const pipeline = open.reduce((sum, lead) => sum + Number(lead.valorEstimado || 0), 0)
+    const averageTicket = won.length ? Math.round(revenue / won.length) : 0
+    return { won: won.length, lost: lost.length, newLeads: newLeads.length, revenue, pipeline, open: open.length, averageTicket }
+  }, [filteredLeads])
 
   const sourceData = useMemo(() => {
-    const counts = leads.reduce((result, lead) => ({ ...result, [lead.origem || 'Outros']: (result[lead.origem || 'Outros'] || 0) + 1 }), {})
+    const counts = filteredLeads.reduce((result, lead) => ({ ...result, [lead.origem || 'Outros']: (result[lead.origem || 'Outros'] || 0) + 1 }), {})
     return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5)
-  }, [leads])
+  }, [filteredLeads])
 
   const performance = useMemo(() => employees.map((employee, index) => {
-    const owned = leads.filter((lead) => lead.responsavel === employee.nome)
+    const owned = filteredLeads.filter((lead) => lead.responsavel === employee.nome)
     const closed = owned.filter((lead) => lead.status === 'Fechado')
     const value = closed.reduce((sum, lead) => sum + Number(lead.valorEstimado || 0), 0)
-    const score = Math.min(100, Math.max(18, closed.length * 32 + owned.length * 8 + (10 - index) * 2))
+    const score = Math.min(100, Math.max(18, closed.length * 32 + owned.length * 8 + (12 - index) * 2))
     return { employee, score, deals: closed.length, value }
-  }).sort((a, b) => rankingMode === 'value' ? b.value - a.value : b.score - a.score), [employees, leads, rankingMode])
+  }).sort((a, b) => rankingMode === 'value' ? b.value - a.value : b.score - a.score), [employees, filteredLeads, rankingMode])
+
+  const statusHealth = useMemo(() => {
+    const stages = ['Novo Lead', 'Contato Feito', 'Reunião', 'Proposta', 'Fechado', 'Perdido']
+    return stages.map((status) => {
+      const items = filteredLeads.filter((lead) => lead.status === status)
+      const value = items.reduce((sum, lead) => sum + Number(lead.valorEstimado || 0), 0)
+      return { status, count: items.length, value }
+    })
+  }, [filteredLeads])
+
+  const segmentData = useMemo(() => {
+    const segments = [
+      ['Pequenas', 0, 20000],
+      ['Médias', 20000, 60000],
+      ['Grandes', 60000, Infinity],
+    ]
+    return segments.map(([label, min, max]) => {
+      const items = filteredLeads.filter((lead) => lead.valorEstimado >= min && lead.valorEstimado < max)
+      const value = items.reduce((sum, lead) => sum + Number(lead.valorEstimado || 0), 0)
+      return { label, count: items.length, value }
+    })
+  }, [filteredLeads])
 
   const series = buildSeries(Math.max(metrics.revenue, 18000), periods[period].factor)
-  const goal = 50000
+  const goal = 250000
   const goalProgress = Math.min(100, Math.round((metrics.revenue / goal) * 100))
   const conversion = metrics.won + metrics.lost ? Math.round((metrics.won / (metrics.won + metrics.lost)) * 100) : 0
+  const weightedForecast = Math.round(
+    statusHealth.reduce((sum, item) => {
+      const weight = { 'Novo Lead': 0.12, 'Contato Feito': 0.25, Reunião: 0.45, Proposta: 0.72, Fechado: 1, Perdido: 0 }[item.status] || 0
+      return sum + item.value * weight
+    }, 0),
+  )
+  const coverage = goal ? Math.round(((metrics.pipeline + metrics.revenue) / goal) * 100) : 0
+  const stalled = filteredLeads.filter((lead) => ['Novo Lead', 'Contato Feito'].includes(lead.status) && Number(lead.valorEstimado || 0) >= 10000)
+  const bestOwner = performance[0]
+  const bestSource = sourceData[0]
 
   return (
     <section className="performance-dashboard">
@@ -116,12 +167,40 @@ export default function PerformanceDashboard({ leads, employees }) {
         </div>
       </div>
 
-      <div className="executive-strip">
-        <div className="metric-glow metric-glow--blue"><small>Entradas</small><strong>{metrics.newLeads}</strong><span>novos leads</span><b>↗ 12%</b></div>
-        <div className="metric-glow metric-glow--green"><small>Fechamentos</small><strong>{metrics.won}</strong><span>clientes ganhos</span><b>↗ 8%</b></div>
-        <div className="metric-glow metric-glow--red"><small>Perdas</small><strong>{metrics.lost}</strong><span>oportunidades</span><b>↘ 3%</b></div>
-        <div className="metric-glow metric-glow--violet"><small>Pipeline</small><strong>{formatCurrency(metrics.pipeline)}</strong><span>potencial em aberto</span><b>↗ 18%</b></div>
+      <div className="dashboard-filter-bar" aria-label="Filtros do dashboard">
+        <label><span>Responsável</span><select value={ownerFilter} onChange={(event) => setOwnerFilter(event.target.value)}>{filterOptions.owners.map((item) => <option key={item}>{item}</option>)}</select></label>
+        <label><span>Etapa</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>{filterOptions.statuses.map((item) => <option key={item}>{item}</option>)}</select></label>
+        <label><span>Origem</span><select value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value)}>{filterOptions.sources.map((item) => <option key={item}>{item}</option>)}</select></label>
+        <button type="button" onClick={() => { setOwnerFilter('Todos'); setStatusFilter('Todos'); setSourceFilter('Todos') }}>Limpar filtros</button>
       </div>
+
+      <div className="executive-strip">
+        <div className="metric-glow metric-glow--blue"><small>Carteira filtrada</small><strong>{filteredLeads.length}</strong><span>oportunidades na visão</span><b>{Math.round((filteredLeads.length / Math.max(leads.length, 1)) * 100)}%</b></div>
+        <div className="metric-glow metric-glow--green"><small>Fechamentos</small><strong>{metrics.won}</strong><span>{formatCurrency(metrics.revenue)}</span><b>{conversion}% conv.</b></div>
+        <div className="metric-glow metric-glow--red"><small>Risco aberto</small><strong>{stalled.length}</strong><span>leads quentes parados</span><b>Priorizar</b></div>
+        <div className="metric-glow metric-glow--violet"><small>Forecast</small><strong>{formatCurrency(weightedForecast)}</strong><span>{coverage}% de cobertura da meta</span><b>{formatCurrency(metrics.averageTicket)}</b></div>
+      </div>
+
+      <section className="dashboard-briefing">
+        <div>
+          <span className="eyebrow">Leitura executiva</span>
+          <h2>{coverage >= 100 ? 'Meta coberta com margem de execução' : 'Pipeline precisa de aceleração tática'}</h2>
+          <p>
+            A visão atual combina {filteredLeads.length} oportunidades, {metrics.open} em aberto e {metrics.won} clientes ganhos.
+            {bestOwner?.employee?.nome ? ` ${bestOwner.employee.nome} lidera a performance nesta seleção.` : ''}
+            {bestSource ? ` O canal ${bestSource[0]} concentra o maior volume de aquisição.` : ''}
+          </p>
+        </div>
+        <div className="briefing-actions">
+          <span><strong>{formatCurrency(metrics.pipeline)}</strong><small>Pipeline bruto</small></span>
+          <span><strong>{formatCurrency(weightedForecast)}</strong><small>Forecast ponderado</small></span>
+          <span><strong>{stalled.length}</strong><small>Alertas comerciais</small></span>
+        </div>
+      </section>
+
+      <Suspense fallback={<section className="three-showcase three-showcase--loading"><span>Carregando visão 3D...</span></section>}>
+        <ThreeShowcase statusHealth={statusHealth} employees={employees} />
+      </Suspense>
 
       <div className="insight-grid">
         <article className="revenue-panel">
@@ -152,8 +231,46 @@ export default function PerformanceDashboard({ leads, employees }) {
           <header><span className="eyebrow">Aquisição</span><h2>Origem dos leads</h2></header>
           <div className="source-bars">
             {sourceData.map(([source, count], index) => (
-              <div key={source}><span>{source}</span><div><i style={{ width: `${Math.max(16, (count / Math.max(leads.length, 1)) * 100)}%`, '--delay': `${index * 90}ms` }} /></div><strong>{count}</strong></div>
+              <div key={source}><span>{source}</span><div><i style={{ width: `${Math.max(16, (count / Math.max(filteredLeads.length, 1)) * 100)}%`, '--delay': `${index * 90}ms` }} /></div><strong>{count}</strong></div>
             ))}
+          </div>
+        </article>
+      </div>
+
+      <div className="dashboard-deep-grid">
+        <article className="stage-health-panel">
+          <header><div><span className="eyebrow">Funil completo</span><h2>Saúde por etapa</h2></div><span>{formatCurrency(metrics.pipeline + metrics.revenue)}</span></header>
+          <div className="stage-health-list">
+            {statusHealth.map((item) => (
+              <button key={item.status} type="button" className={statusFilter === item.status ? 'is-active' : ''} onClick={() => setStatusFilter(item.status)}>
+                <span>{item.status}</span>
+                <div><i style={{ width: `${Math.max(6, (item.count / Math.max(filteredLeads.length, 1)) * 100)}%` }} /></div>
+                <strong>{item.count}</strong>
+                <small>{formatCurrency(item.value)}</small>
+              </button>
+            ))}
+          </div>
+        </article>
+
+        <article className="segment-panel">
+          <header><span className="eyebrow">Tamanho de empresa</span><h2>PME a enterprise</h2></header>
+          <div className="segment-rings">
+            {segmentData.map((segment) => (
+              <button key={segment.label} type="button" onClick={() => setSourceFilter('Todos')}>
+                <span>{segment.label}</span>
+                <i style={{ '--segment': `${Math.min(360, (segment.value / Math.max(metrics.pipeline + metrics.revenue, 1)) * 360)}deg` }}><b>{segment.count}</b></i>
+                <strong>{formatCurrency(segment.value)}</strong>
+              </button>
+            ))}
+          </div>
+        </article>
+
+        <article className="playbook-panel">
+          <header><span className="eyebrow">Próximas ações</span><h2>Plano de ataque</h2></header>
+          <div className="playbook-list">
+            <div><b>01</b><span><strong>Propostas</strong><small>Blindar retorno de decisores e criar data de fechamento.</small></span></div>
+            <div><b>02</b><span><strong>Leads parados</strong><small>Reativar oportunidades acima de R$ 10 mil em contato inicial.</small></span></div>
+            <div><b>03</b><span><strong>Canais fortes</strong><small>Duplicar campanha nos canais com maior ticket médio.</small></span></div>
           </div>
         </article>
       </div>
@@ -163,19 +280,19 @@ export default function PerformanceDashboard({ leads, employees }) {
           <header><div><span className="eyebrow">Resultado comercial</span><h2>Fluxo de oportunidades</h2></div><span className="live-pill"><i /> Atualizado</span></header>
           <div className="funnel-bars">
             {[
-              ['Entradas', leads.length, '#4e6fe0'],
-              ['Contato', leads.filter((lead) => lead.status !== 'Novo Lead').length, '#7961d5'],
-              ['Propostas', leads.filter((lead) => ['Proposta', 'Fechado'].includes(lead.status)).length, '#e1a442'],
+              ['Entradas', filteredLeads.length, '#4e6fe0'],
+              ['Contato', filteredLeads.filter((lead) => lead.status !== 'Novo Lead').length, '#7961d5'],
+              ['Propostas', filteredLeads.filter((lead) => ['Proposta', 'Fechado'].includes(lead.status)).length, '#e1a442'],
               ['Ganhos', metrics.won, '#36b789'],
             ].map(([label, value, color]) => (
-              <div key={label}><span>{label}</span><div><i style={{ width: `${Math.max(12, (value / Math.max(leads.length, 1)) * 100)}%`, background: color }} /></div><strong>{value}</strong></div>
+              <div key={label}><span>{label}</span><div><i style={{ width: `${Math.max(12, (value / Math.max(filteredLeads.length, 1)) * 100)}%`, background: color }} /></div><strong>{value}</strong></div>
             ))}
           </div>
         </article>
 
         <article className="team-ranking">
           <header>
-            <div><span className="eyebrow">10 profissionais</span><h2>Desempenho da equipe</h2></div>
+            <div><span className="eyebrow">{employees.length} profissionais</span><h2>Desempenho da equipe</h2></div>
             <div className="ranking-toggle"><button className={rankingMode === 'score' ? 'is-active' : ''} onClick={() => setRankingMode('score')}>Score</button><button className={rankingMode === 'value' ? 'is-active' : ''} onClick={() => setRankingMode('value')}>Receita</button></div>
           </header>
           <div>

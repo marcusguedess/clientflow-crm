@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import PixelAvatar from './PixelAvatar'
 
 const locations = {
@@ -12,11 +12,14 @@ const locations = {
   'employee-davi': { left: '73%', top: '79%' },
   'employee-yara': { left: '29%', top: '31%' },
   'employee-otto': { left: '88%', top: '27%' },
+  'employee-marcus': { left: '52%', top: '46%' },
+  'employee-leonardo': { left: '55%', top: '23%' },
 }
 
 export default function OfficeCity({ employees, onSelectEmployee, onCityEvent, onSound }) {
   const [insideOffice, setInsideOffice] = useState(false)
   const [activeEmployeeId, setActiveEmployeeId] = useState(employees[0].id)
+  const [positions, setPositions] = useState(locations)
   const [actions, setActions] = useState({})
   const [dialog, setDialog] = useState(null)
 
@@ -25,6 +28,42 @@ export default function OfficeCity({ employees, onSelectEmployee, onCityEvent, o
     const employee = employees.find((item) => item.id === activeEmployeeId)
     onCityEvent(`${employee.nome.split(' ')[0]} começou a ${action === 'dance' ? 'dançar' : action === 'wave' ? 'acenar' : action === 'walk' ? 'caminhar' : 'descansar'}.`)
   }
+
+  function moveActive(dx, dy) {
+    setActions((current) => ({ ...current, [activeEmployeeId]: 'walk' }))
+    setPositions((current) => {
+      const currentPosition = current[activeEmployeeId] || locations[activeEmployeeId] || { left: '50%', top: '50%' }
+      const left = Math.min(92, Math.max(8, Number.parseFloat(currentPosition.left) + dx))
+      const top = Math.min(84, Math.max(12, Number.parseFloat(currentPosition.top) + dy))
+      return { ...current, [activeEmployeeId]: { left: `${left}%`, top: `${top}%` } }
+    })
+  }
+
+  useEffect(() => {
+    function handleKeyDown(event) {
+      const keys = {
+        ArrowUp: [0, -4],
+        w: [0, -4],
+        W: [0, -4],
+        ArrowDown: [0, 4],
+        s: [0, 4],
+        S: [0, 4],
+        ArrowLeft: [-4, 0],
+        a: [-4, 0],
+        A: [-4, 0],
+        ArrowRight: [4, 0],
+        d: [4, 0],
+        D: [4, 0],
+      }
+      const move = keys[event.key]
+      if (!move || insideOffice) return
+      event.preventDefault()
+      moveActive(move[0], move[1])
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [activeEmployeeId, insideOffice])
 
   function interact(title, text, sound = 'click') {
     onSound?.(sound)
@@ -53,7 +92,7 @@ export default function OfficeCity({ employees, onSelectEmployee, onCityEvent, o
           <button className="office-coffee" onClick={() => interact('Café do escritório', 'Você preparou um espresso e recuperou a energia da tarde.', 'shop')} type="button"><span>CAFÉ</span><i>☕</i></button>
           <div className="office-lounge"><span>LOUNGE</span><i /><i /><b>🪴</b></div>
           <div className="office-meeting"><span>SALA DE REUNIÃO</span><i /><i /><i /><i /></div>
-          {employees.slice(0, 8).map((employee, index) => (
+          {employees.map((employee, index) => (
             <button className={`office-desk office-desk--${index + 1} character-action--${actions[employee.id] || 'idle'}`} key={employee.id} onClick={() => onSelectEmployee(employee)}>
               <span className="desk-screen"><i /></span>
               <span className="desk-chair" />
@@ -86,6 +125,13 @@ export default function OfficeCity({ employees, onSelectEmployee, onCityEvent, o
         <button onClick={() => setCharacterAction('dance')}>♫ Dançar</button>
         <button onClick={() => setCharacterAction('wave')}>👋 Acenar</button>
         <button onClick={() => setCharacterAction('rest')}>☕ Descansar</button>
+        <div className="city-move-pad" aria-label="Mover avatar ativo">
+          <button onClick={() => moveActive(0, -5)} aria-label="Mover para cima">↑</button>
+          <button onClick={() => moveActive(-5, 0)} aria-label="Mover para esquerda">←</button>
+          <button onClick={() => moveActive(5, 0)} aria-label="Mover para direita">→</button>
+          <button onClick={() => moveActive(0, 5)} aria-label="Mover para baixo">↓</button>
+        </div>
+        <span className="city-keyboard-hint">WASD / setas</span>
       </div>
 
       <div className="pixel-city" aria-label="Cidade virtual da equipe">
@@ -102,6 +148,14 @@ export default function OfficeCity({ employees, onSelectEmployee, onCityEvent, o
         <div className="city-building city-building--marketing">
           <span>MARKETING</span>
           <i /><i /><i />
+        </div>
+        <div className="city-building city-building--enterprise">
+          <span>ENTERPRISE</span>
+          <i /><i /><i /><i />
+        </div>
+        <div className="city-building city-building--data">
+          <span>DADOS</span>
+          <i /><i />
         </div>
         <div className="city-food">
           <span>CAFÉ FLOW</span>
@@ -136,9 +190,9 @@ export default function OfficeCity({ employees, onSelectEmployee, onCityEvent, o
 
         {employees.map((employee) => (
           <button
-            className={`city-character character-action--${actions[employee.id] || 'idle'}`}
+            className={`city-character ${activeEmployeeId === employee.id ? 'is-active' : ''} character-action--${actions[employee.id] || 'idle'}`}
             key={employee.id}
-            style={locations[employee.id]}
+            style={positions[employee.id] || locations[employee.id]}
             onClick={() => onSelectEmployee(employee)}
             type="button"
           >

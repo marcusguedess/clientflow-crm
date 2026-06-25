@@ -118,6 +118,28 @@ export const seedEmployees = [
     avatar: { skin: '#f2c7a5', hair: '#34251f', shirt: '#315ed9', hairStyle: 'mohawk', outfit: 'jacket', accessory: 'glasses' },
     citySpot: 'operations',
   },
+  {
+    id: 'employee-marcus',
+    nome: 'Marcus Guedes',
+    cargo: 'CEO',
+    setor: 'Diretoria',
+    bio: 'Conecto metas, rotina de vendas e decisões executivas.',
+    status: 'online',
+    frase: 'Pipeline bom é pipeline com próximo passo claro.',
+    avatar: { skin: '#d99b72', hair: '#252b3a', shirt: '#36a77b', hairStyle: 'sidecut', outfit: 'suit', accessory: 'headset' },
+    citySpot: 'sales',
+  },
+  {
+    id: 'employee-leonardo',
+    nome: 'Leonardo Magdanello',
+    cargo: 'CTO',
+    setor: 'Tecnologia',
+    bio: 'Transformo canais, dados e cadência em novas oportunidades.',
+    status: 'ocupado',
+    frase: 'Crescimento consistente nasce de foco e leitura rápida.',
+    avatar: { skin: '#f2c7a5', hair: '#70442d', shirt: '#9b63ce', hairStyle: 'short', outfit: 'blazer', accessory: 'glasses' },
+    citySpot: 'marketing',
+  },
 ]
 
 export const seedMessages = {
@@ -144,6 +166,22 @@ export const seedMessages = {
   'employee-davi': [],
   'employee-yara': [],
   'employee-otto': [],
+  'employee-marcus': [
+    {
+      id: 'msg-marcus-1',
+      senderId: 'employee-marcus',
+      text: 'Revisei o forecast: precisamos proteger as propostas enterprise desta semana.',
+      createdAt: '2026-06-24T14:05:00.000Z',
+    },
+  ],
+  'employee-leonardo': [
+    {
+      id: 'msg-leonardo-1',
+      senderId: 'employee-leonardo',
+      text: 'Os canais de indicação e evento estão puxando ticket maior. Vou abrir um plano de aquisição.',
+      createdAt: '2026-06-24T15:25:00.000Z',
+    },
+  ],
 }
 
 export const seedPosts = [
@@ -160,5 +198,19 @@ export const seedPosts = [
     text: 'Compartilhei no mural o checklist de passagem do comercial para Customer Success.',
     createdAt: '2026-06-24T09:15:00.000Z',
     likes: 4,
+  },
+  {
+    id: 'post-3',
+    employeeId: 'employee-marcus',
+    text: 'Prioridade da semana: propostas com valor alto, follow-up no mesmo dia e próximos passos sem ambiguidade.',
+    createdAt: '2026-06-24T08:40:00.000Z',
+    likes: 7,
+  },
+  {
+    id: 'post-4',
+    employeeId: 'employee-leonardo',
+    text: 'Mapeei os melhores canais por ticket. Indicação, Evento e Google merecem campanhas separadas.',
+    createdAt: '2026-06-23T17:10:00.000Z',
+    likes: 6,
   },
 ]
