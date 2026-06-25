@@ -111,6 +111,22 @@
   white-space: normal;
 }
 
+.home-stats .stat-card {
+  gap: 12px;
+  padding: 17px;
+}
+
+.home-stats .stat-card__icon {
+  width: 40px;
+  height: 40px;
+}
+
+.home-stats .stat-card__content strong {
+  overflow: visible;
+  font-size: 20px;
+  text-overflow: clip;
+}
+
 .home-destinations {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

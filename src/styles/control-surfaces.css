@@ -182,8 +182,8 @@
 
 @media (max-width: 720px) {
   .theme-studio {
-    right: 78px;
-    bottom: 16px;
+    right: 16px;
+    bottom: 74px;
   }
 
   .theme-studio > button.theme-studio__trigger {
@@ -192,13 +192,13 @@
   }
 
   .theme-studio__panel {
-    right: -62px;
+    right: 0;
   }
 
   .privacy-toggle {
-    right: 134px;
+    right: 16px;
     left: auto;
-    bottom: 18px;
+    bottom: 130px;
     display: grid;
     width: 44px;
     min-width: 44px;
@@ -231,6 +231,6 @@
   }
 
   .content-area {
-    padding-bottom: 88px;
+    padding-bottom: 92px;
   }
 }

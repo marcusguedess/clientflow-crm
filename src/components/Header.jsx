@@ -1,4 +1,4 @@
-export default function Header({ title, subtitle, onNewLead, onOpenMenu, showNewLead = true }) {
+export default function Header({ title, subtitle, onNewLead, onOpenMenu, onOpenCommandPalette, showNewLead = true }) {
   return (
     <header className="page-header">
       <div className="page-header__title">
@@ -12,12 +12,22 @@ export default function Header({ title, subtitle, onNewLead, onOpenMenu, showNew
           <p>{subtitle}</p>
         </div>
       </div>
-      {showNewLead && (
-        <button className="button button--primary" onClick={onNewLead}>
-          <span aria-hidden="true">+</span>
-          Novo lead
+      <div className="page-header__actions">
+        <button className="header-command-button" type="button" onClick={onOpenCommandPalette} title="Busca e comandos">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-4-4" />
+          </svg>
+          <span>Buscar</span>
+          <kbd>Ctrl K</kbd>
         </button>
-      )}
+        {showNewLead && (
+          <button className="button button--primary" onClick={onNewLead}>
+            <span aria-hidden="true">+</span>
+            Novo lead
+          </button>
+        )}
+      </div>
     </header>
   )
 }

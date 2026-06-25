@@ -1,7 +1,7 @@
 import { buildBusinessAlerts, getWeightedForecast } from '../utils/businessInsights'
 import { formatCurrency } from '../utils/formatCurrency'
 
-export default function BusinessCommandCenter({ leads, tasks }) {
+export default function BusinessCommandCenter({ leads, tasks, onNavigate }) {
   const alerts = buildBusinessAlerts(leads, tasks)
   const openLeads = leads.filter((lead) => !['Fechado', 'Perdido'].includes(lead.status))
   const wonRevenue = leads
@@ -9,6 +9,19 @@ export default function BusinessCommandCenter({ leads, tasks }) {
     .reduce((total, lead) => total + Number(lead.valorEstimado || 0), 0)
   const weightedForecast = getWeightedForecast(leads)
   const enterpriseOpen = openLeads.filter((lead) => lead.segmento === 'Enterprise')
+  const pipelineValue = openLeads.reduce((total, lead) => total + Number(lead.valorEstimado || 0), 0)
+  const goal = 250000
+  const coverage = Math.round(((wonRevenue + pipelineValue) / goal) * 100)
+  const forecastProgress = Math.min(100, Math.round(((wonRevenue + weightedForecast) / goal) * 100))
+  const atRiskValue = openLeads
+    .filter((lead) => !lead.proximoPasso || ['Novo Lead', 'Contato Feito'].includes(lead.status))
+    .reduce((total, lead) => total + Number(lead.valorEstimado || 0), 0)
+  const scenarioValues = [
+    { label: 'Conservador', value: wonRevenue + weightedForecast * 0.72 },
+    { label: 'Base', value: wonRevenue + weightedForecast },
+    { label: 'Agressivo', value: wonRevenue + weightedForecast * 1.28 },
+  ]
+  const urgentAlert = [...alerts].sort((a, b) => Number(b.value) - Number(a.value))[0]
 
   return (
     <section className="business-command-center">
@@ -32,6 +45,43 @@ export default function BusinessCommandCenter({ leads, tasks }) {
             <small>{alert.detail}</small>
           </article>
         ))}
+      </div>
+      <div className="command-executive-read">
+        <article className="command-coverage">
+          <header>
+            <div>
+              <span className="eyebrow">Cobertura da meta</span>
+              <strong>{coverage}%</strong>
+            </div>
+            <small>{formatCurrency(wonRevenue + pipelineValue)} sobre {formatCurrency(goal)}</small>
+          </header>
+          <div className="command-coverage__track">
+            <i style={{ width: `${Math.min(100, coverage)}%` }} />
+            <span style={{ left: `${forecastProgress}%` }} title="Receita ganha + forecast ponderado" />
+          </div>
+          <footer>
+            <span>Forecast realizável: {forecastProgress}%</span>
+            <span>Valor em risco: {formatCurrency(atRiskValue)}</span>
+          </footer>
+        </article>
+        <article className="command-scenarios">
+          <span className="eyebrow">Cenários do período</span>
+          {scenarioValues.map((scenario) => (
+            <div key={scenario.label}>
+              <span>{scenario.label}</span>
+              <strong>{formatCurrency(scenario.value)}</strong>
+            </div>
+          ))}
+        </article>
+        <article className="command-decision">
+          <span className="eyebrow">Decisão sugerida</span>
+          <strong>{urgentAlert?.label || 'Operação estável'}</strong>
+          <p>{urgentAlert?.detail || 'Nenhum risco crítico identificado agora.'}</p>
+          <div>
+            <button type="button" onClick={() => onNavigate?.('pipeline')}>Revisar pipeline</button>
+            <button type="button" onClick={() => onNavigate?.('tasks')}>Abrir prioridades</button>
+          </div>
+        </article>
       </div>
     </section>
   )

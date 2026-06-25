@@ -7,8 +7,11 @@ export default function MessengerPage({
   employees,
   currentEmployee,
   messages,
+  leads = [],
   onSendMessage,
   onOpenProfile,
+  onOpenDeal,
+  onCreateFollowUp,
   initialContactId,
 }) {
   const contacts = employees.filter((employee) => employee.id !== currentEmployee.id)
@@ -73,6 +76,12 @@ export default function MessengerPage({
   }, [channels, search])
   const selected = employees.find((employee) => employee.id === selectedId) || channels.find((channel) => channel.id === selectedId)
   const conversation = useMemo(() => messages[selectedId] || [], [messages, selectedId])
+  const relatedLead = useMemo(() => {
+    const memberNames = selected?.members?.map((member) => member.nome) || [selected?.nome].filter(Boolean)
+    return leads
+      .filter((lead) => !['Fechado', 'Perdido'].includes(lead.status) && memberNames.includes(lead.responsavel))
+      .sort((a, b) => Number(b.valorEstimado || 0) - Number(a.valorEstimado || 0))[0] || null
+  }, [leads, selected])
 
   function submitMessage(event) {
     event.preventDefault()
@@ -147,6 +156,12 @@ export default function MessengerPage({
             )}
             <div className="messenger__header-actions">
               <span className="local-only-pill">Chat operacional</span>
+              {relatedLead && (
+                <>
+                  <button type="button" className="button button--ghost messenger__new-thread" onClick={() => onOpenDeal?.(relatedLead)}>Abrir deal</button>
+                  <button type="button" className="button button--ghost messenger__new-thread" onClick={() => onCreateFollowUp?.(relatedLead, 'chat')}>Criar follow-up</button>
+                </>
+              )}
               <button type="button" className="button button--ghost messenger__new-thread" onClick={() => setViewMode('direct')}>Nova conversa</button>
             </div>
           </header>

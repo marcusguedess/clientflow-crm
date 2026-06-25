@@ -81,7 +81,7 @@ export default function DashboardHome({
         </button>
         <button type="button" onClick={() => onNavigate('messenger')}>
           <DestinationIcon type="messenger" />
-          <span><strong>Mensageira</strong><small>Diretas, grupos e setores</small></span>
+          <span><strong>Flow Chat</strong><small>Diretas, grupos e setores</small></span>
           <i aria-hidden="true">→</i>
         </button>
         <button className="home-destination--city" type="button" onClick={() => onNavigate('city')}>
@@ -96,7 +96,7 @@ export default function DashboardHome({
         </button>
       </section>
 
-      <BusinessCommandCenter leads={leads} tasks={tasks} />
+      <BusinessCommandCenter leads={leads} tasks={tasks} onNavigate={onNavigate} />
 
       <section className="home-opportunities">
         <div className="section-heading">

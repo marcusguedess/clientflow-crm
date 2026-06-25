@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
+import { usePersistentState } from '../hooks/usePersistentState'
 import { buildCommercialModel } from '../utils/commercialModel'
 import { formatCurrency } from '../utils/formatCurrency'
+import EntityTimeline from './EntityTimeline'
 import PixelAvatar from './PixelAvatar'
 import StatusBadge from './StatusBadge'
 
@@ -91,7 +93,7 @@ function EntityCard({ item, tab, selected, onSelect }) {
   )
 }
 
-function DetailPanel({ item, tab, onEditLead }) {
+function DetailPanel({ item, tab, timeline, onEditLead, onAddTimelineNote, onOpenDeal }) {
   if (!item) {
     return (
       <article className="entity-detail">
@@ -122,6 +124,14 @@ function DetailPanel({ item, tab, onEditLead }) {
             </button>
           ))}
         </section>
+        <EntityTimeline
+          compact
+          entity={item}
+          entityType="account"
+          events={timeline.filter((event) => event.accountId === item.id)}
+          onAddNote={onAddTimelineNote}
+          onOpenDeal={onOpenDeal}
+        />
       </article>
     )
   }
@@ -148,6 +158,14 @@ function DetailPanel({ item, tab, onEditLead }) {
             </button>
           ))}
         </section>
+        <EntityTimeline
+          compact
+          entity={item}
+          entityType="contact"
+          events={timeline.filter((event) => event.contactId === item.id || item.deals.some((deal) => deal.id === event.dealId))}
+          onAddNote={onAddTimelineNote}
+          onOpenDeal={onOpenDeal}
+        />
       </article>
     )
   }
@@ -164,6 +182,13 @@ function DetailPanel({ item, tab, onEditLead }) {
           <span><small>Tipo</small><strong>{item.type}</strong></span>
           <span><small>Data</small><strong>{formatDate(item.at)}</strong></span>
         </div>
+        <EntityTimeline
+          compact
+          entity={item}
+          entityType="event"
+          events={item.dealId ? timeline.filter((event) => event.dealId === item.dealId) : [item]}
+          onOpenDeal={onOpenDeal}
+        />
       </article>
     )
   }
@@ -189,16 +214,29 @@ function DetailPanel({ item, tab, onEditLead }) {
         <div className="entity-mini-row"><span><strong>Próximo passo</strong><small>{formatDate(item.nextStep)}</small></span><em>{item.lossReason || 'Sem perda'}</em></div>
         <p className="sensitive-data">{item.notes}</p>
       </section>
+      <EntityTimeline
+        compact
+        entity={item}
+        entityType="deal"
+        events={timeline.filter((event) => event.dealId === item.id)}
+        onAddNote={onAddTimelineNote}
+        onOpenDeal={onOpenDeal}
+      />
       <button className="button button--primary" type="button" onClick={() => onEditLead(item)}>Editar oportunidade</button>
     </article>
   )
 }
 
-export default function CommercialWorkspace({ leads, tasks, activities, employees, onEditLead, onCreateLead }) {
+export default function CommercialWorkspace({ leads, tasks, activities, employees, onEditLead, onCreateLead, onAddTimelineNote }) {
   const [tab, setTab] = useState('accounts')
   const [query, setQuery] = useState('')
   const [segment, setSegment] = useState('Todos')
   const [selectedId, setSelectedId] = useState('')
+  const [savedViews, setSavedViews] = usePersistentState('clientflow-commercial-views-v1', [], (value) =>
+    Array.isArray(value)
+      ? value.slice(0, 12).filter((item) => item?.id && item?.label && tabs.some((tabItem) => tabItem.id === item.tab))
+      : [],
+  )
   const model = useMemo(() => buildCommercialModel(leads, tasks, activities, employees), [leads, tasks, activities, employees])
 
   const collection = useMemo(() => {
@@ -219,6 +257,33 @@ export default function CommercialWorkspace({ leads, tasks, activities, employee
 
   const selected = collection.find((item) => item.id === selectedId)
   const segmentOptions = ['Todos', ...new Set([...model.accounts, ...model.deals, ...model.contacts].map((item) => item.segment).filter(Boolean))]
+
+  function saveCurrentView() {
+    const normalizedQuery = query.trim()
+    const label = [
+      tabs.find((item) => item.id === tab)?.label,
+      segment !== 'Todos' ? segment : '',
+      normalizedQuery ? `"${normalizedQuery}"` : '',
+    ].filter(Boolean).join(' · ')
+    const view = {
+      id: globalThis.crypto.randomUUID(),
+      label: label || 'Visão comercial',
+      tab,
+      segment,
+      query: normalizedQuery,
+    }
+    setSavedViews((current) => [view, ...current.filter((item) =>
+      !(item.tab === view.tab && item.segment === view.segment && item.query === view.query),
+    )].slice(0, 12))
+  }
+
+  function applySavedView(viewId) {
+    const view = savedViews.find((item) => item.id === viewId)
+    if (!view) return
+    setTab(view.tab)
+    setSegment(view.segment)
+    setQuery(view.query)
+  }
 
   return (
     <section className="commercial-workspace">
@@ -245,10 +310,15 @@ export default function CommercialWorkspace({ leads, tasks, activities, employee
           ))}
         </div>
         <div className="commercial-filters">
+          <select defaultValue="" onChange={(event) => applySavedView(event.target.value)} aria-label="Abrir visão salva">
+            <option value="" disabled>Visões salvas</option>
+            {savedViews.map((view) => <option value={view.id} key={view.id}>{view.label}</option>)}
+          </select>
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar empresa, pessoa, email, etapa..." />
           <select value={segment} onChange={(event) => setSegment(event.target.value)}>
             {segmentOptions.map((item) => <option key={item}>{item}</option>)}
           </select>
+          <button className="button button--ghost" type="button" onClick={saveCurrentView}>Salvar visão</button>
           <button className="button button--primary" type="button" onClick={onCreateLead}>+ Novo lead</button>
         </div>
       </div>
@@ -261,7 +331,17 @@ export default function CommercialWorkspace({ leads, tasks, activities, employee
             <div className="empty-state"><strong>Nada encontrado</strong><span>Ajuste os filtros para ver outros registros.</span></div>
           )}
         </aside>
-        <DetailPanel item={selected} tab={tab} onEditLead={(entity) => onEditLead(leads.find((lead) => lead.id === entity.id) || entity)} />
+        <DetailPanel
+          item={selected}
+          tab={tab}
+          timeline={model.timeline}
+          onAddTimelineNote={onAddTimelineNote}
+          onOpenDeal={(dealId) => {
+            const lead = leads.find((item) => item.id === dealId)
+            if (lead) onEditLead(lead)
+          }}
+          onEditLead={(entity) => onEditLead(leads.find((lead) => lead.id === entity.id) || entity)}
+        />
       </div>
     </section>
   )

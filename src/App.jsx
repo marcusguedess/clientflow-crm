@@ -4,6 +4,7 @@ import ActivitiesPage from './components/ActivitiesPage'
 import AnalyticsHub from './components/AnalyticsHub'
 import ClientsPage from './components/ClientsPage'
 import CommercialWorkspace from './components/CommercialWorkspace'
+import CommandPalette from './components/CommandPalette'
 import DashboardHome from './components/DashboardHome'
 import FloatingChat from './components/FloatingChat'
 import Header from './components/Header'
@@ -53,6 +54,18 @@ export default function App() {
     value && typeof value === 'object' && !Array.isArray(value) ? value : {},
   )
   const [tasks, setTasks] = usePersistentState('clientflow-tasks-v1', seedTasks, sanitizeTasks)
+  const [timelineNotes, setTimelineNotes] = usePersistentState('clientflow-timeline-notes-v1', [], (value) =>
+    Array.isArray(value)
+      ? value.slice(0, 500).map((note) => ({
+          id: cleanText(note?.id, 80) || globalThis.crypto.randomUUID(),
+          type: 'note',
+          title: cleanText(note?.title, 160),
+          detail: cleanText(note?.detail, 500),
+          at: Number.isNaN(Date.parse(note?.at)) ? new Date().toISOString() : note.at,
+          dealId: cleanText(note?.dealId, 80),
+        })).filter((note) => note.title && note.detail)
+      : [],
+  )
   const [respectState, setRespectState] = usePersistentState('clientflow-respects-v1', {
     date: new Date().toISOString().slice(0, 10),
     remaining: 3,
@@ -63,6 +76,7 @@ export default function App() {
   const [editingLead, setEditingLead] = useState(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deletedLead, setDeletedLead] = useState(null)
   const [toast, setToast] = useState(null)
@@ -81,6 +95,7 @@ export default function App() {
   const [soundEnabled, setSoundEnabled] = usePersistentState('clientflow-sound-v1', true, (value) => value !== false)
   const actionLogRef = useRef({})
   const currentEmployee = employees[0]
+  const timelineActivities = useMemo(() => [...timelineNotes, ...seedActivities], [timelineNotes])
 
   useEffect(() => {
     if (respectState.date !== new Date().toISOString().slice(0, 10)) {
@@ -93,6 +108,21 @@ export default function App() {
     const timeout = window.setTimeout(() => setToast(null), 4500)
     return () => window.clearTimeout(timeout)
   }, [toast])
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [activeView])
+
+  useEffect(() => {
+    function openCommandPalette(event) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setIsCommandPaletteOpen(true)
+      }
+    }
+    window.addEventListener('keydown', openCommandPalette)
+    return () => window.removeEventListener('keydown', openCommandPalette)
+  }, [])
 
   useEffect(() => {
     let timeout
@@ -281,6 +311,20 @@ export default function App() {
     setToast({ message: 'Tarefa criada no Flowboard.' })
   }
 
+  function createCommunicationFollowUp(lead, source) {
+    const dueDate = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)
+    createTask({
+      title: `Follow-up ${lead.empresa}`,
+      description: `Retomar contexto iniciado no ${source} com ${lead.nome}.`,
+      status: 'Planejado',
+      owner: lead.responsavel || currentEmployee.nome,
+      priority: Number(lead.valorEstimado || 0) >= 50000 ? 'Alta' : 'Média',
+      dueDate,
+      sticker: source === 'chat' ? '💬' : '✉️',
+      relatedLeadId: lead.id,
+    })
+  }
+
   function moveTask(id, status) {
     setTasks((current) => current.map((task) => task.id === id ? { ...task, status } : task))
     setToast({ message: `Tarefa movida para ${status}.` })
@@ -289,6 +333,23 @@ export default function App() {
   function deleteTask(id) {
     setTasks((current) => current.filter((task) => task.id !== id))
     setToast({ message: 'Tarefa removida.', tone: 'warning' })
+  }
+
+  function addTimelineNote({ entity, entityType, text }) {
+    const dealId =
+      entityType === 'deal'
+        ? entity.id
+        : entity?.dealId || entity?.deals?.[0]?.id || ''
+    const company = entity?.company || entity?.title || entity?.name || 'Relacionamento'
+    setTimelineNotes((current) => [{
+      id: globalThis.crypto.randomUUID(),
+      type: 'note',
+      title: `Nota em ${company}`,
+      detail: `${currentEmployee.nome}: ${cleanText(text, 500)}`,
+      at: new Date().toISOString(),
+      dealId,
+    }, ...current].slice(0, 500))
+    setToast({ message: 'Nota adicionada à timeline.' })
   }
 
   async function exportBackup(password) {
@@ -302,6 +363,7 @@ export default function App() {
         posts,
         socialStats,
         tasks,
+        timelineNotes,
       }, password)
       const blob = new Blob([content], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
@@ -328,6 +390,7 @@ export default function App() {
       setPosts(sanitizePosts(data.posts, employeeIds, seedPosts))
       if (data.socialStats && typeof data.socialStats === 'object') setSocialStats(data.socialStats)
       setTasks(sanitizeTasks(data.tasks, seedTasks))
+      if (Array.isArray(data.timelineNotes)) setTimelineNotes(data.timelineNotes)
       setToast({ message: 'Backup validado e restaurado.' })
     } catch {
       setToast({ message: 'Backup inválido ou senha incorreta.', tone: 'warning' })
@@ -356,6 +419,7 @@ export default function App() {
           {...viewCopy[activeView]}
           onNewLead={openNewLead}
           onOpenMenu={() => setIsSidebarOpen(true)}
+          onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
           showNewLead={['dashboard', 'pipeline', 'leads', 'clients'].includes(activeView)}
         />
 
@@ -401,10 +465,11 @@ export default function App() {
             <CommercialWorkspace
               leads={leads}
               tasks={tasks}
-              activities={seedActivities}
+              activities={timelineActivities}
               employees={employees}
               onEditLead={openEditLead}
               onCreateLead={openNewLead}
+              onAddTimelineNote={addTimelineNote}
             />
           )}
 
@@ -427,9 +492,12 @@ export default function App() {
               employees={employees}
               currentEmployee={currentEmployee}
               messages={messages}
+              leads={leads}
               initialContactId={teamContactId}
               onSendMessage={sendMessage}
               onOpenProfile={setProfileEmployee}
+              onOpenDeal={openEditLead}
+              onCreateFollowUp={createCommunicationFollowUp}
             />
           )}
 
@@ -439,6 +507,8 @@ export default function App() {
               currentEmployee={currentEmployee}
               leads={leads}
               onOpenProfile={setProfileEmployee}
+              onOpenDeal={openEditLead}
+              onCreateFollowUp={createCommunicationFollowUp}
             />
           )}
 
@@ -461,9 +531,9 @@ export default function App() {
             />
           )}
 
-          {activeView === 'clients' && <ClientsPage leads={leads} employees={employees} tasks={tasks} activities={seedActivities} onEdit={openEditLead} />}
+          {activeView === 'clients' && <ClientsPage leads={leads} employees={employees} tasks={tasks} activities={timelineActivities} onEdit={openEditLead} />}
 
-          {activeView === 'activities' && <ActivitiesPage activities={seedActivities} tasks={tasks} leads={leads} />}
+          {activeView === 'activities' && <ActivitiesPage activities={timelineActivities} tasks={tasks} leads={leads} />}
 
           {activeView === 'tasks' && (
             <TaskBoard tasks={tasks} employees={employees} leads={leads} onCreate={createTask} onMove={moveTask} onDelete={deleteTask} />
@@ -526,6 +596,17 @@ export default function App() {
           onAttention={callAttention}
         />
       )}
+
+      <CommandPalette
+        open={isCommandPaletteOpen}
+        leads={leads}
+        employees={employees}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onNavigate={setActiveView}
+        onNewLead={openNewLead}
+        onOpenLead={openEditLead}
+        onOpenEmployee={setProfileEmployee}
+      />
 
       <FloatingChat employees={employees} onOpenMessenger={() => setActiveView('messenger')} />
       <ThemeStudio

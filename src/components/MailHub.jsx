@@ -10,14 +10,16 @@ const folders = [
   { id: 'archive', label: 'Arquivados' },
 ]
 
-function buildInitialThreads(employees, currentEmployee) {
+function buildInitialThreads(employees, currentEmployee, leads = []) {
   const peers = employees.filter((employee) => employee.id !== currentEmployee.id)
+  const openLeads = leads.filter((lead) => !['Fechado', 'Perdido'].includes(lead.status))
   return peers.slice(0, 6).map((employee, index) => ({
     id: `mail-${employee.id}`,
     folder: index < 2 ? 'priority' : index < 4 ? 'followup' : 'inbox',
     unread: index < 3,
     starred: index === 0,
     from: employee,
+    relatedLead: openLeads[index % Math.max(openLeads.length, 1)] || null,
     subject:
       index === 0
         ? `Revisão do forecast com ${employee.setor}`
@@ -54,8 +56,15 @@ function buildInitialThreads(employees, currentEmployee) {
   }))
 }
 
-export default function MailHub({ employees, currentEmployee, onOpenProfile }) {
-  const initialThreads = useMemo(() => buildInitialThreads(employees, currentEmployee), [employees, currentEmployee])
+export default function MailHub({
+  employees,
+  currentEmployee,
+  leads = [],
+  onOpenProfile,
+  onOpenDeal,
+  onCreateFollowUp,
+}) {
+  const initialThreads = useMemo(() => buildInitialThreads(employees, currentEmployee, leads), [employees, currentEmployee, leads])
   const [threads, setThreads] = useState(initialThreads)
   const [folder, setFolder] = useState('inbox')
   const [selectedId, setSelectedId] = useState(initialThreads[0]?.id || null)
@@ -234,8 +243,23 @@ export default function MailHub({ employees, currentEmployee, onOpenProfile }) {
                   <small>
                     {selectedThread.from.nome} · {selectedThread.from.setor}
                   </small>
+                  {selectedThread.relatedLead && (
+                    <span className="mail-reader__deal">
+                      {selectedThread.relatedLead.empresa} · {selectedThread.relatedLead.status}
+                    </span>
+                  )}
                 </div>
                 <div className="mail-reader__actions">
+                  {selectedThread.relatedLead && (
+                    <>
+                      <button type="button" className="button button--ghost" onClick={() => onOpenDeal?.(selectedThread.relatedLead)}>
+                        Abrir deal
+                      </button>
+                      <button type="button" className="button button--ghost" onClick={() => onCreateFollowUp?.(selectedThread.relatedLead, 'e-mail')}>
+                        Criar follow-up
+                      </button>
+                    </>
+                  )}
                   <button type="button" className="button button--ghost" onClick={() => toggleStar(selectedThread.id)}>
                     {selectedThread.starred ? 'Remover destaque' : 'Destacar'}
                   </button>
