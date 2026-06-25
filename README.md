@@ -1,6 +1,8 @@
 # ClientFlow CRM
 
-CRM Lite moderno para organizar leads, acompanhar oportunidades e visualizar o pipeline comercial em uma interface simples e responsiva.
+> **Em pleno desenvolvimento.** O projeto já pode ser explorado e demonstrado, mas novas áreas, interações e ajustes visuais continuam entrando.
+
+Um CRM moderno, divertido e feito para organizar leads, acompanhar oportunidades e dar mais vida à rotina comercial.
 
 O projeto foi desenvolvido como uma aplicação frontend publicável no GitHub Pages. Os dados são armazenados localmente no navegador, sem backend ou serviços externos.
 
@@ -72,10 +74,16 @@ npm run dev
 
 O terminal exibirá o endereço local da aplicação, normalmente `http://localhost:5173/clientflow-crm/`.
 
-Para gerar uma versão de produção:
+Para gerar a versão usada pela Vercel:
 
 ```bash
 npm run build
+```
+
+Para gerar a versão com caminho compatível com GitHub Pages:
+
+```bash
+npm run build:github
 ```
 
 Para testar localmente a versão gerada:
@@ -84,9 +92,25 @@ Para testar localmente a versão gerada:
 npm run preview
 ```
 
+## Publicação na Vercel
+
+O projeto inclui `vercel.json` com:
+
+- build do Vite;
+- cache prolongado para assets versionados;
+- CSP e cabeçalhos de proteção;
+- bloqueio de câmera, microfone, localização e pagamentos.
+
+Conecte o repositório à Vercel e mantenha:
+
+```text
+Build Command: npm run build
+Output Directory: dist
+```
+
 ## Publicação no GitHub Pages
 
-O `vite.config.js` já está configurado com a base `/clientflow-crm/`.
+O modo `github-pages` está configurado com a base `/clientflow-crm/`.
 
 1. Crie um repositório no GitHub chamado `clientflow-crm`.
 2. Envie o projeto para a branch `main`.

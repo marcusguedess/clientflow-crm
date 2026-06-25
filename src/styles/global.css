@@ -259,6 +259,9 @@ h2 {
   font-size: clamp(23px, 3vw, 29px);
 }
 
+.header-title-row{display:flex;align-items:center;gap:9px}.development-badge{padding:4px 7px;border:1px solid #ead89a;border-radius:20px;color:#8a6712;background:#fff8dc;font-size:7px;font-weight:900;letter-spacing:.4px;text-transform:uppercase}
+@media(max-width:640px){.header-title-row{align-items:flex-start;flex-direction:column;gap:3px}.development-badge{font-size:6px}}
+
 .page-header p {
   margin: 5px 0 0;
   color: var(--muted);

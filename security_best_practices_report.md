@@ -40,7 +40,8 @@ Não existem achados críticos ou altos no escopo atual. A principal limitação
 - Evidência: CSP é entregue por `<meta>`, não por cabeçalho HTTP.
 - Impacto: diretivas como `frame-ancestors` não funcionam via meta; cabeçalhos como `X-Content-Type-Options` e `Permissions-Policy` dependem da hospedagem.
 - Correção definitiva: usar uma hospedagem/CDN que permita configurar cabeçalhos HTTP.
-- Mitigação atual: CSP compatível com meta, sem scripts externos e sem conteúdo ativo de terceiros.
+- Mitigação atual: CSP compatível com meta no GitHub Pages, sem scripts externos e sem conteúdo ativo de terceiros.
+- Vercel: o arquivo `vercel.json` entrega CSP por cabeçalho, bloqueio de iframe, `nosniff`, política de referência, política de permissões e isolamento de janela.
 
 ## Controles implementados
 
