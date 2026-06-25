@@ -66,6 +66,26 @@ export default function ThreeShowcase({ statusHealth, employees }) {
 
       const group = new THREE.Group()
       scene.add(group)
+      const pointerDrift = { x: 0, y: 0 }
+
+      const particleGeometry = new THREE.BufferGeometry()
+      const particlePositions = new Float32Array(90 * 3)
+      for (let index = 0; index < particlePositions.length; index += 3) {
+        particlePositions[index] = (Math.random() - 0.5) * 12
+        particlePositions[index + 1] = Math.random() * 4.2 + 0.35
+        particlePositions[index + 2] = (Math.random() - 0.5) * 7
+      }
+      particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3))
+      const particles = new THREE.Points(
+        particleGeometry,
+        new THREE.PointsMaterial({
+          color: new THREE.Color(secondary),
+          size: 0.045,
+          transparent: true,
+          opacity: 0.52,
+        }),
+      )
+      group.add(particles)
 
       const floor = new THREE.Mesh(
         new THREE.BoxGeometry(12, 0.16, 7),
@@ -154,7 +174,14 @@ export default function ThreeShowcase({ statusHealth, employees }) {
         }
       }
 
+      function handlePointerMove(event) {
+        const rect = mount.getBoundingClientRect()
+        pointerDrift.x = ((event.clientX - rect.left) / rect.width - 0.5) * 0.6
+        pointerDrift.y = ((event.clientY - rect.top) / rect.height - 0.5) * 0.4
+      }
+
       mount.addEventListener('pointerdown', handlePointer)
+      mount.addEventListener('pointermove', handlePointerMove)
 
       function resize() {
         const width = mount.clientWidth || 800
@@ -172,7 +199,10 @@ export default function ThreeShowcase({ statusHealth, employees }) {
       function animate() {
         const elapsed = clock.getElapsedTime()
         const spin = mode === 'revenue' ? 0.15 : mode === 'pipeline' ? 0.08 : mode === 'team' ? 0.05 : 0.1
-        group.rotation.y = Math.sin(elapsed * 0.28) * spin
+        group.rotation.y = Math.sin(elapsed * 0.28) * spin + pointerDrift.x
+        group.rotation.x = pointerDrift.y
+        particles.rotation.y = elapsed * 0.035
+        particles.position.y = Math.sin(elapsed * 0.7) * 0.08
         pulseRing.material.color = new THREE.Color(modePalette[mode])
         pulseRing.material.emissive = new THREE.Color(modePalette[mode])
         beam.material.color = new THREE.Color(modePalette[mode])
@@ -191,6 +221,7 @@ export default function ThreeShowcase({ statusHealth, employees }) {
       return () => {
         window.cancelAnimationFrame(animationFrame)
         mount.removeEventListener('pointerdown', handlePointer)
+        mount.removeEventListener('pointermove', handlePointerMove)
         observer?.disconnect()
         scene.traverse((object) => {
           object.geometry?.dispose?.()

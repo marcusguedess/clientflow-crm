@@ -2,16 +2,17 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import EmployeeProfile from './components/EmployeeProfile'
 import ActivitiesPage from './components/ActivitiesPage'
 import AnalyticsHub from './components/AnalyticsHub'
+import BusinessCommandCenter from './components/BusinessCommandCenter'
 import ClientsPage from './components/ClientsPage'
+import CommercialWorkspace from './components/CommercialWorkspace'
 import FloatingChat from './components/FloatingChat'
 import Header from './components/Header'
+import MessengerPage from './components/MessengerPage'
 import LeadCard from './components/LeadCard'
 import LeadForm from './components/LeadForm'
-import LeadIntelligence from './components/LeadIntelligence'
 import OfficeCity from './components/OfficeCity'
 import PipelineBoard from './components/PipelineBoard'
 import PerformanceDashboard from './components/PerformanceDashboard'
-import PixelAvatar from './components/PixelAvatar'
 import SearchBar from './components/SearchBar'
 import SecurityCenter from './components/SecurityCenter'
 import Sidebar from './components/Sidebar'
@@ -222,7 +223,7 @@ export default function App() {
   function openMessage(employee) {
     setTeamContactId(employee.id)
     setProfileEmployee(null)
-    setActiveView('team')
+    setActiveView('messenger')
   }
 
   function sendMessage(threadId, text) {
@@ -353,13 +354,14 @@ export default function App() {
     ({
       dashboard: { title: 'Visão geral', subtitle: 'Acompanhe o desempenho e as oportunidades do seu time.' },
       pipeline: { title: 'Pipeline comercial', subtitle: 'Visualize cada oportunidade e avance seus leads pelo funil.' },
-      leads: { title: 'Base de leads', subtitle: 'Consulte e organize toda a carteira comercial.' },
+      leads: { title: 'Comercial', subtitle: 'Leads, contas, contatos e oportunidades conectados em um fluxo B2B.' },
       clients: { title: 'Clientes', subtitle: 'Acompanhe contas conquistadas e o contexto do relacionamento.' },
       activities: { title: 'Atividades', subtitle: 'Histórico comercial, pendências e próximos passos.' },
       tasks: { title: 'Flowboard', subtitle: 'Organize o trabalho comercial em um quadro visual.' },
       analytics: { title: 'Relatórios', subtitle: 'Analise leads, clientes, receita e perdas com mais contexto.' },
       security: { title: 'Dados & segurança', subtitle: 'Proteja, exporte e restaure os dados locais do workspace.' },
       team: { title: 'Fluxora · Equipe online', subtitle: 'Messenger e mural local para o espaço virtual da empresa.' },
+      messenger: { title: 'Flow Messenger', subtitle: 'Bate-papo interno por pessoa, grupo e setor.' },
       city: { title: 'Fluxora · ClientFlow City', subtitle: 'Explore setores, perfis e a presença virtual da equipe.' },
     }[activeView])
 
@@ -415,6 +417,8 @@ export default function App() {
                   icon={<MetricIcon type="rate" />}
                 />
               </section>
+
+              <BusinessCommandCenter leads={leads} tasks={tasks} />
 
               <PerformanceDashboard leads={leads} employees={employees} tasks={tasks} />
 
@@ -481,36 +485,14 @@ export default function App() {
           )}
 
           {activeView === 'leads' && (
-            <section className="directory-section">
-              <LeadIntelligence leads={leads} activeStatus={statusFilter} onSelectStatus={setStatusFilter} />
-              <div className="section-heading">
-                <div><span className="eyebrow">CRM</span><h2>Diretório comercial</h2></div>
-                <span className="result-count">{filteredLeads.length} registros</span>
-              </div>
-              <SearchBar query={query} onQueryChange={setQuery} status={statusFilter} onStatusChange={setStatusFilter} />
-              <div className="lead-table-wrap">
-                <table className="lead-table">
-                  <thead><tr><th>Lead</th><th>Status</th><th>Responsável</th><th>Origem</th><th>Valor</th><th>Ações</th></tr></thead>
-                  <tbody>
-                    {filteredLeads.map((lead) => (
-                      <tr key={lead.id}>
-                        <td><strong>{lead.nome}</strong><small className="sensitive-data">{lead.empresa} · {lead.email}</small></td>
-                        <td><select value={lead.status} onChange={(event) => changeLeadStatus(lead.id, event.target.value)}>{['Novo Lead','Contato Feito','Reunião','Proposta','Fechado','Perdido'].map((status) => <option key={status}>{status}</option>)}</select></td>
-                        <td>
-                          <span className="owner-cell">
-                            <PixelAvatar avatar={findEmployeeByName(employees, lead.responsavel).avatar} size={28} animated />
-                            {lead.responsavel || 'Não definido'}
-                          </span>
-                        </td>
-                        <td>{lead.origem || 'Não informada'}</td>
-                        <td><strong>{formatCurrency(lead.valorEstimado)}</strong></td>
-                        <td><button className="table-action" onClick={() => openEditLead(lead)}>Editar</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
+            <CommercialWorkspace
+              leads={leads}
+              tasks={tasks}
+              activities={seedActivities}
+              employees={employees}
+              onEditLead={openEditLead}
+              onCreateLead={openNewLead}
+            />
           )}
 
           {activeView === 'team' && (
@@ -518,12 +500,22 @@ export default function App() {
               key={teamContactId || 'team'}
               employees={employees}
               currentEmployee={currentEmployee}
-              messages={messages}
               posts={posts}
-              initialContactId={teamContactId}
-              onSendMessage={sendMessage}
               onAddPost={addPost}
               onLikePost={likePost}
+              onOpenProfile={setProfileEmployee}
+              tasks={tasks}
+              socialStats={socialStats}
+            />
+          )}
+
+          {activeView === 'messenger' && (
+            <MessengerPage
+              employees={employees}
+              currentEmployee={currentEmployee}
+              messages={messages}
+              initialContactId={teamContactId}
+              onSendMessage={sendMessage}
               onOpenProfile={setProfileEmployee}
             />
           )}
@@ -549,10 +541,10 @@ export default function App() {
 
           {activeView === 'clients' && <ClientsPage leads={leads} employees={employees} tasks={tasks} activities={seedActivities} onEdit={openEditLead} />}
 
-          {activeView === 'activities' && <ActivitiesPage activities={seedActivities} tasks={tasks} />}
+          {activeView === 'activities' && <ActivitiesPage activities={seedActivities} tasks={tasks} leads={leads} />}
 
           {activeView === 'tasks' && (
-            <TaskBoard tasks={tasks} employees={employees} onCreate={createTask} onMove={moveTask} onDelete={deleteTask} />
+            <TaskBoard tasks={tasks} employees={employees} leads={leads} onCreate={createTask} onMove={moveTask} onDelete={deleteTask} />
           )}
 
           {activeView === 'analytics' && <AnalyticsHub leads={leads} employees={employees} />}
@@ -613,7 +605,7 @@ export default function App() {
         />
       )}
 
-      <FloatingChat employees={employees} onOpenTeam={() => setActiveView('team')} />
+      <FloatingChat employees={employees} onOpenMessenger={() => setActiveView('messenger')} />
       <ThemeStudio theme={theme} onChange={(nextTheme) => { playSound('click', soundEnabled); setTheme(nextTheme) }} soundEnabled={soundEnabled} onToggleSound={() => setSoundEnabled((current) => !current)} />
       <button
         className={`privacy-toggle ${privacyMode ? 'is-active' : ''}`}

@@ -9,6 +9,13 @@ export default function LeadCard({ lead, owner, onEdit, onDelete, onStatusChange
     .slice(0, 2)
     .map((part) => part[0])
     .join('')
+  const forecast = Number(lead.valorEstimado || 0) * (Number(lead.probabilidade ?? 0) / 100)
+  const nextStepLabel = lead.proximoPasso
+    ? new Date(`${lead.proximoPasso}T12:00:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+    : 'Sem próximo passo'
+  const closeDateLabel = lead.previsaoFechamento
+    ? new Date(`${lead.previsaoFechamento}T12:00:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+    : 'Sem previsão'
 
   return (
     <article className={`lead-card ${compact ? 'lead-card--compact' : ''}`}>
@@ -52,8 +59,21 @@ export default function LeadCard({ lead, owner, onEdit, onDelete, onStatusChange
           <small>Valor estimado</small>
           <strong>{formatCurrency(lead.valorEstimado)}</strong>
         </div>
+        <div>
+          <small>Forecast</small>
+          <strong>{formatCurrency(forecast)}</strong>
+        </div>
         {!compact && <StatusBadge status={lead.status} />}
       </div>
+
+      {!compact && (
+        <div className="lead-card__signals">
+          <span>{lead.segmento || 'PME'}</span>
+          <span>{Number(lead.probabilidade ?? 0)}%</span>
+          <span>{closeDateLabel}</span>
+          <span>{nextStepLabel}</span>
+        </div>
+      )}
 
       <label className="status-control">
         <span>Mover para</span>

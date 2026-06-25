@@ -11,12 +11,11 @@ export default function ClientsPage({ leads, employees = [], tasks = [], activit
   const clients = leads.filter((lead) => lead.status === 'Fechado')
   const [selected, setSelected] = useState(clients[0] || null)
   const selectedOwner = selected ? findEmployeeByName(employees, selected.responsavel) : null
-  const selectedContextKey = [selected?.empresa, selected?.nome, selected?.responsavel].filter(Boolean).join(' ').toLowerCase()
-  const relatedTasks = useMemo(() => tasks.filter((task) => task.owner === selected?.responsavel).slice(0, 3), [tasks, selected?.responsavel])
+  const relatedTasks = useMemo(() => tasks.filter((task) => task.relatedLeadId === selected?.id || task.owner === selected?.responsavel).slice(0, 4), [tasks, selected?.id, selected?.responsavel])
   const selectedActivities = useMemo(() => activities.filter((activity) => {
     const text = `${activity.title || ''} ${activity.detail || ''}`.toLowerCase()
-    return selectedContextKey && text.includes(selectedContextKey.split(' ')[0])
-  }).slice(0, 3), [activities, selectedContextKey])
+    return [selected?.empresa, selected?.nome, selected?.responsavel].filter(Boolean).some((token) => text.includes(String(token).toLowerCase()))
+  }).slice(0, 4), [activities, selected])
 
   return (
     <section className="clients-page">

@@ -1,4 +1,5 @@
 import { lazy, Suspense, useMemo, useState } from 'react'
+import { getLeadProbability } from '../utils/businessInsights'
 import { formatCurrency } from '../utils/formatCurrency'
 import PixelAvatar from './PixelAvatar'
 
@@ -126,13 +127,9 @@ export default function PerformanceDashboard({ leads, employees, tasks = [] }) {
   }, [filteredLeads])
 
   const segmentData = useMemo(() => {
-    const segments = [
-      ['Pequenas', 0, 20000],
-      ['Médias', 20000, 60000],
-      ['Grandes', 60000, Infinity],
-    ]
-    return segments.map(([label, min, max]) => {
-      const items = filteredLeads.filter((lead) => lead.valorEstimado >= min && lead.valorEstimado < max)
+    const segments = ['PME', 'Mid-market', 'Enterprise', 'Setor público']
+    return segments.map((label) => {
+      const items = filteredLeads.filter((lead) => (lead.segmento || 'PME') === label)
       const value = items.reduce((sum, lead) => sum + Number(lead.valorEstimado || 0), 0)
       return { label, count: items.length, value }
     })
@@ -144,8 +141,8 @@ export default function PerformanceDashboard({ leads, employees, tasks = [] }) {
   const conversion = metrics.won + metrics.lost ? Math.round((metrics.won / (metrics.won + metrics.lost)) * 100) : 0
   const weightedForecast = Math.round(
     statusHealth.reduce((sum, item) => {
-      const weight = { 'Novo Lead': 0.12, 'Contato Feito': 0.25, Reunião: 0.45, Proposta: 0.72, Fechado: 1, Perdido: 0 }[item.status] || 0
-      return sum + item.value * weight
+      const items = filteredLeads.filter((lead) => lead.status === item.status)
+      return sum + items.reduce((total, lead) => total + Number(lead.valorEstimado || 0) * (getLeadProbability(lead) / 100), 0)
     }, 0),
   )
   const coverage = goal ? Math.round(((metrics.pipeline + metrics.revenue) / goal) * 100) : 0

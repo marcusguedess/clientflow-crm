@@ -34,6 +34,10 @@ function ListIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h12M9 12h12M9 18h12M4 6h.1M4 12h.1M4 18h.1" /></svg>
 }
 
+function ChatIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 18.5 3 21l.7-4A8 8 0 1 1 5 18.5Z" /></svg>
+}
+
 function ShieldIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6v6c0 5-3.4 8-8 9-4.6-1-8-4-8-9V6l8-3Z" /><path d="m9 12 2 2 4-5" /></svg>
 }
@@ -58,7 +62,7 @@ export default function Sidebar({ activeView, onViewChange, isOpen, onClose, cur
   const crmItems = [
     { id: 'dashboard', label: 'Visão geral', icon: <GridIcon /> },
     { id: 'pipeline', label: 'Pipeline', icon: <PipelineIcon /> },
-    { id: 'leads', label: 'Leads', icon: <ListIcon /> },
+    { id: 'leads', label: 'Comercial', icon: <ListIcon /> },
     { id: 'clients', label: 'Clientes', icon: <ClientIcon /> },
     { id: 'activities', label: 'Atividades', icon: <ActivityIcon /> },
     { id: 'tasks', label: 'Flowboard', icon: <CheckIcon /> },
@@ -67,6 +71,7 @@ export default function Sidebar({ activeView, onViewChange, isOpen, onClose, cur
   ]
   const fluxoraItems = [
     { id: 'team', label: 'Equipe', icon: <PeopleIcon /> },
+    { id: 'messenger', label: 'Mensageira', icon: <ChatIcon /> },
     { id: 'city', label: 'ClientFlow City', icon: <CityIcon /> },
   ]
 

@@ -11,6 +11,12 @@ const emptyLead = {
   origem: '',
   responsavel: '',
   notas: '',
+  segmento: 'PME',
+  tipoConta: 'Lead',
+  probabilidade: '',
+  previsaoFechamento: '',
+  proximoPasso: '',
+  motivoPerda: '',
 }
 
 export default function LeadForm({ lead, employees = [], onSave, onClose }) {
@@ -30,6 +36,7 @@ export default function LeadForm({ lead, employees = [], onSave, onClose }) {
     onSave({
       ...formData,
       valorEstimado: Number(formData.valorEstimado),
+      probabilidade: formData.probabilidade === '' ? undefined : Number(formData.probabilidade),
     })
   }
 
@@ -110,6 +117,54 @@ export default function LeadForm({ lead, employees = [], onSave, onClose }) {
                 <option value="">Selecionar responsável</option>
                 {employees.map((employee) => <option key={employee.id} value={employee.nome}>{employee.nome} · {employee.cargo}</option>)}
               </select>
+            </label>
+            <label>
+              <span>Segmento</span>
+              <select name="segmento" value={formData.segmento} onChange={updateField}>
+                <option>PME</option>
+                <option>Mid-market</option>
+                <option>Enterprise</option>
+                <option>Setor público</option>
+              </select>
+            </label>
+            <label>
+              <span>Tipo de conta</span>
+              <select name="tipoConta" value={formData.tipoConta} onChange={updateField}>
+                <option>Lead</option>
+                <option>Conta</option>
+                <option>Cliente</option>
+                <option>Parceiro</option>
+              </select>
+            </label>
+            <label>
+              <span>Probabilidade (%)</span>
+              <input
+                name="probabilidade"
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                value={formData.probabilidade}
+                onChange={updateField}
+                placeholder="Ex.: 72"
+              />
+            </label>
+            <label>
+              <span>Previsão de fechamento</span>
+              <input name="previsaoFechamento" type="date" value={formData.previsaoFechamento} onChange={updateField} />
+            </label>
+            <label>
+              <span>Próximo passo</span>
+              <input name="proximoPasso" type="date" value={formData.proximoPasso} onChange={updateField} />
+            </label>
+            <label>
+              <span>Motivo de perda</span>
+              <input
+                name="motivoPerda"
+                value={formData.motivoPerda}
+                onChange={updateField}
+                placeholder="Obrigatório para análise de perdas"
+              />
             </label>
             <label className="form-grid__wide">
               <span>Notas</span>

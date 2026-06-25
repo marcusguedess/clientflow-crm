@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import EmployeeBadge from './EmployeeBadge'
 
-export default function FloatingChat({ employees, onOpenTeam }) {
+export default function FloatingChat({ employees, onOpenMessenger }) {
   const [open, setOpen] = useState(false)
   const online = employees.filter((employee) => employee.status === 'online')
 
@@ -11,7 +11,7 @@ export default function FloatingChat({ employees, onOpenTeam }) {
         <div className="floating-chat__panel">
           <header><strong>Equipe online</strong><button onClick={() => setOpen(false)}>×</button></header>
           {online.map((employee) => <EmployeeBadge key={employee.id} employee={employee} compact />)}
-          <button className="button button--primary floating-chat__open" onClick={onOpenTeam}>Abrir Flow Messenger</button>
+          <button className="button button--primary floating-chat__open" onClick={onOpenMessenger}>Abrir Flow Messenger</button>
         </div>
       )}
       <button className="floating-chat__button" onClick={() => setOpen((current) => !current)} aria-label="Abrir chat da equipe">

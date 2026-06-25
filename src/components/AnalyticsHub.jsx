@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { PIPELINE_STATUSES } from '../data/seedData'
+import { getLeadProbability } from '../utils/businessInsights'
 import { formatCurrency } from '../utils/formatCurrency'
 import PixelAvatar from './PixelAvatar'
 
@@ -54,8 +55,7 @@ export default function AnalyticsHub({ leads, employees }) {
   const ownerOptions = ['Todos', ...employees.map((employee) => employee.nome)]
   const sourceOptions = ['Todos', ...new Set(leads.map((lead) => lead.origem || 'Outros'))]
   const forecast = Math.round(data.open.reduce((total, lead) => {
-    const weight = { 'Novo Lead': 0.12, 'Contato Feito': 0.25, Reunião: 0.45, Proposta: 0.72 }[lead.status] || 0
-    return total + Number(lead.valorEstimado || 0) * weight
+    return total + Number(lead.valorEstimado || 0) * (getLeadProbability(lead) / 100)
   }, 0))
   const reasons = [
     ['Orçamento adiado', 42],

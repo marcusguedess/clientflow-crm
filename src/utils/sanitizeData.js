@@ -13,6 +13,12 @@ const LEAD_FIELDS = [
   'responsavel',
   'notas',
   'criadoEm',
+  'segmento',
+  'probabilidade',
+  'previsaoFechamento',
+  'proximoPasso',
+  'motivoPerda',
+  'tipoConta',
 ]
 
 export function cleanText(value, maxLength = MAX_TEXT) {
@@ -24,6 +30,15 @@ export function sanitizeLead(input) {
   const lead = Object.fromEntries(LEAD_FIELDS.map((field) => [field, input[field]]))
   const status = PIPELINE_STATUSES.includes(lead.status) ? lead.status : 'Novo Lead'
   const valor = Number(lead.valorEstimado)
+  const probabilidade = Number(lead.probabilidade)
+  const defaultProbability = {
+    'Novo Lead': 12,
+    'Contato Feito': 25,
+    Reunião: 45,
+    Proposta: 72,
+    Fechado: 100,
+    Perdido: 0,
+  }[status]
 
   return {
     id: cleanText(lead.id, 80) || globalThis.crypto.randomUUID(),
@@ -37,6 +52,12 @@ export function sanitizeLead(input) {
     responsavel: cleanText(lead.responsavel, 100),
     notas: cleanText(lead.notas, 2000),
     criadoEm: Number.isNaN(Date.parse(lead.criadoEm)) ? new Date().toISOString() : lead.criadoEm,
+    segmento: cleanText(lead.segmento, 80) || 'PME',
+    probabilidade: Number.isFinite(probabilidade) ? Math.max(0, Math.min(probabilidade, 100)) : defaultProbability,
+    previsaoFechamento: /^\d{4}-\d{2}-\d{2}$/.test(lead.previsaoFechamento) ? lead.previsaoFechamento : '',
+    proximoPasso: /^\d{4}-\d{2}-\d{2}$/.test(lead.proximoPasso) ? lead.proximoPasso : '',
+    motivoPerda: status === 'Perdido' ? cleanText(lead.motivoPerda, 160) : cleanText(lead.motivoPerda, 160),
+    tipoConta: ['Lead', 'Conta', 'Cliente', 'Parceiro'].includes(lead.tipoConta) ? lead.tipoConta : (status === 'Fechado' ? 'Cliente' : 'Lead'),
   }
 }
 
@@ -113,5 +134,6 @@ export function sanitizeTasks(value, fallback = []) {
     priority: priorities.has(task?.priority) ? task.priority : 'Média',
     dueDate: /^\d{4}-\d{2}-\d{2}$/.test(task?.dueDate) ? task.dueDate : '',
     sticker: cleanText(task?.sticker, 8) || '📌',
+    relatedLeadId: cleanText(task?.relatedLeadId, 80),
   })).filter((task) => task.title)
 }

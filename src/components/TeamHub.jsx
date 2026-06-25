@@ -6,85 +6,26 @@ import { cleanText } from '../utils/sanitizeData'
 export default function TeamHub({
   employees,
   currentEmployee,
-  messages,
   posts,
-  onSendMessage,
   onAddPost,
   onLikePost,
   onOpenProfile,
-  initialContactId,
+  tasks = [],
+  socialStats = {},
 }) {
-  const [search, setSearch] = useState('')
-  const contacts = employees.filter((employee) => employee.id !== currentEmployee.id)
-  const channelMap = useMemo(() => {
-    const sectors = [...new Set(employees.map((employee) => employee.setor))]
-    return {
-      direct: contacts.map((employee) => ({
-        id: employee.id,
-        label: employee.nome,
-        kind: 'Direto',
-        members: [employee],
-        avatar: employee.avatar,
-      })),
-      groups: [
-        {
-          id: 'group-comercial',
-          label: 'Comercial',
-          kind: 'Grupo',
-          members: employees.filter((employee) => ['Comercial', 'Diretoria'].includes(employee.setor)),
-          avatar: employees.find((employee) => ['Comercial', 'Diretoria'].includes(employee.setor))?.avatar,
-        },
-        {
-          id: 'group-operacoes',
-          label: 'Operações',
-          kind: 'Grupo',
-          members: employees.filter((employee) => ['Operações', 'Financeiro', 'Dados'].includes(employee.setor)),
-          avatar: employees.find((employee) => ['Operações', 'Financeiro', 'Dados'].includes(employee.setor))?.avatar,
-        },
-        {
-          id: 'group-gente',
-          label: 'Pessoas & Cultura',
-          kind: 'Grupo',
-          members: employees.filter((employee) => ['Pessoas', 'Sucesso do cliente'].includes(employee.setor)),
-          avatar: employees.find((employee) => ['Pessoas', 'Sucesso do cliente'].includes(employee.setor))?.avatar,
-        },
-      ].filter((group) => group.members.length),
-      sectors: sectors.map((sector) => ({
-        id: `sector-${sector.toLowerCase().replaceAll(' ', '-')}`,
-        label: sector,
-        kind: 'Setor',
-        members: employees.filter((employee) => employee.setor === sector),
-        avatar: employees.find((employee) => employee.setor === sector)?.avatar,
-      })),
-    }
-  }, [employees, contacts])
-
-  const [viewMode, setViewMode] = useState('direct')
-  const [selectedId, setSelectedId] = useState(initialContactId || contacts[0]?.id)
-  const [message, setMessage] = useState('')
   const [post, setPost] = useState('')
-  const emojis = ['👍', '🎉', '🔥', '✨', '😂', '🚀', '❤️', '☕']
-  const channels = channelMap[viewMode]
-  const visibleChannels = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase()
-    if (!normalizedSearch) return channels
-    return channels.filter((channel) =>
-      [channel.label, channel.kind, ...(channel.members || []).map((member) => member.nome), ...(channel.members || []).map((member) => member.setor)]
-        .join(' ')
-        .toLowerCase()
-        .includes(normalizedSearch),
-    )
-  }, [channels, search])
-  const selected = employees.find((employee) => employee.id === selectedId) || channels.find((channel) => channel.id === selectedId)
-  const conversation = useMemo(() => messages[selectedId] || [], [messages, selectedId])
-
-  function submitMessage(event) {
-    event.preventDefault()
-    const safeMessage = cleanText(message, 500)
-    if (!safeMessage) return
-    onSendMessage(selectedId, safeMessage)
-    setMessage('')
-  }
+  const peoplePulse = useMemo(() => {
+    const online = employees.filter((employee) => employee.status === 'online').length
+    const sectors = [...new Set(employees.map((employee) => employee.setor))]
+    const workload = employees.map((employee) => ({
+      employee,
+      tasks: tasks.filter((task) => task.owner === employee.nome && task.status !== 'Concluído'),
+      recognition: (socialStats[employee.id]?.likes || 0) + (socialStats[employee.id]?.respects || 0),
+    })).sort((a, b) => b.tasks.length - a.tasks.length)
+    const overloaded = workload.filter((item) => item.tasks.length >= 2).length
+    const recognitionTotal = Object.values(socialStats).reduce((sum, item) => sum + (item.likes || 0) + (item.respects || 0), 0)
+    return { online, sectors, workload, overloaded, recognitionTotal }
+  }, [employees, socialStats, tasks])
 
   function submitPost(event) {
     event.preventDefault()
@@ -94,94 +35,33 @@ export default function TeamHub({
     setPost('')
   }
 
-  function sendCoffee(channel) {
-    setSelectedId(channel.id)
-    setMessage((current) => `${current}${current ? ' ' : ''}☕ Brinde de café para ${channel.label}.`)
-  }
-
-  function selectChannel(channelId) {
-    setSelectedId(channelId)
-  }
-
   return (
     <div className="team-hub">
-      <section className="messenger">
-        <aside className="messenger__contacts">
-          <div className="messenger__brand">
-            <span className="messenger__orb">CF</span>
-            <div><strong>Flow Inbox</strong><small>Conversas, grupos e setores</small></div>
-          </div>
-          <div className="messenger-view-switch">
-            <button className={viewMode === 'direct' ? 'is-active' : ''} onClick={() => setViewMode('direct')} type="button">Diretas</button>
-            <button className={viewMode === 'groups' ? 'is-active' : ''} onClick={() => setViewMode('groups')} type="button">Grupos</button>
-            <button className={viewMode === 'sectors' ? 'is-active' : ''} onClick={() => setViewMode('sectors')} type="button">Setores</button>
-          </div>
-          <input
-            className="messenger-search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar conversa, setor ou grupo"
-          />
-          {visibleChannels.map((channel) => (
-            <div className={selectedId === channel.id ? 'contact-row is-active' : 'contact-row'} key={channel.id}>
-              <button className="channel-row" onClick={() => selectChannel(channel.id)} type="button">
-                <PixelAvatar avatar={channel.avatar} size={38} animated />
-                <span>
-                  <strong>{channel.label}</strong>
-                  <small>{channel.kind} · {channel.members.length} pessoas</small>
-                </span>
-              </button>
-              <div className="contact-actions">
-                {channel.kind === 'Direto' && <button className="contact-profile-button" onClick={() => onOpenProfile(channel.members[0])} title="Abrir perfil">i</button>}
-                <button className="contact-coffee-button" onClick={() => sendCoffee(channel)} title="Brindar café" type="button">☕</button>
-              </div>
-            </div>
+      <section className="people-command">
+        <div className="people-command__intro">
+          <span className="eyebrow">People operations</span>
+          <h2>Diretório, rituais e carga do time</h2>
+          <p>Um painel rápido para acompanhar presença, setores, reconhecimento e risco de sobrecarga.</p>
+        </div>
+        <div className="people-command__metrics">
+          <span><small>Online agora</small><strong>{peoplePulse.online}/{employees.length}</strong></span>
+          <span><small>Setores</small><strong>{peoplePulse.sectors.length}</strong></span>
+          <span><small>Sobrecarga</small><strong>{peoplePulse.overloaded}</strong></span>
+          <span><small>Reconhecimentos</small><strong>{peoplePulse.recognitionTotal}</strong></span>
+        </div>
+        <div className="people-rituals">
+          <article><strong>Check-in semanal</strong><small>Prioridades, bloqueios e humor do time.</small></article>
+          <article><strong>1:1s</strong><small>Conversas de evolução por líder e colaborador.</small></article>
+          <article><strong>Reconhecimento</strong><small>Joinhas e respeitos conectados ao crachá.</small></article>
+        </div>
+        <div className="people-workload">
+          {peoplePulse.workload.slice(0, 6).map((item) => (
+            <button key={item.employee.id} type="button" onClick={() => onOpenProfile(item.employee)}>
+              <PixelAvatar avatar={item.employee.avatar} size={34} animated />
+              <span><strong>{item.employee.nome}</strong><small>{item.employee.setor}</small></span>
+              <b>{item.tasks.length}</b>
+            </button>
           ))}
-        </aside>
-
-        <div className="messenger__chat">
-          <header className="messenger__header">
-            {selected?.members?.length ? (
-              <div className="channel-header">
-                <PixelAvatar avatar={selected.avatar} size={42} animated />
-                <div>
-                  <strong>{selected.label}</strong>
-                  <small>{selected.kind} · {selected.members.length} participantes</small>
-                </div>
-              </div>
-            ) : (
-              <EmployeeBadge employee={selected} compact onClick={() => onOpenProfile(selected)} />
-            )}
-            <div className="messenger__header-actions">
-              <span className="local-only-pill">Inbox operacional</span>
-              <button type="button" className="button button--ghost messenger__new-thread" onClick={() => setViewMode('direct')}>Nova conversa</button>
-            </div>
-          </header>
-          <div className="message-list">
-            {conversation.length ? conversation.map((item) => {
-              const sender = employees.find((employee) => employee.id === item.senderId)
-              const mine = item.senderId === currentEmployee.id
-              return (
-                <div className={`message-row ${mine ? 'message-row--mine' : ''}`} key={item.id}>
-                  {!mine && <PixelAvatar avatar={sender?.avatar || selected.avatar} size={30} />}
-                  <div>
-                    <span className="message-bubble">{item.text}</span>
-                    <small>{new Date(item.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</small>
-                  </div>
-                </div>
-              )
-            }) : <div className="message-empty">Comece uma conversa com {selected?.label || selected?.nome}.</div>}
-          </div>
-          <form className="message-compose" onSubmit={submitMessage}>
-            <div className="emoji-row">
-              {emojis.map((emoji) => <button key={emoji} type="button" onClick={() => setMessage((current) => `${current}${emoji}`)}>{emoji}</button>)}
-            </div>
-            <input value={message} maxLength="500" onChange={(event) => setMessage(event.target.value)} placeholder="Escreva uma mensagem, update ou convite..." />
-            <div className="compose-actions">
-              <button className="button button--ghost" type="button" onClick={() => sendCoffee(selected)}>☕ Brinde de café</button>
-              <button className="button button--primary" type="submit">Enviar</button>
-            </div>
-          </form>
         </div>
       </section>
 

@@ -50,60 +50,53 @@ export default function PipelineBoard({ leads, employees = [], onEdit, onDelete,
           <p>
             {selectedLeads.length} oportunidades selecionadas, com {formatCurrency(selectedValue)} em valor estimado.
           </p>
-        </div>
-        <div className="pipeline-spotlight__bars">
-          {stageTotals.map((stage, index) => (
-            <button
-              key={stage.status}
-              type="button"
-              className={selectedStage === stage.status ? 'is-active' : ''}
-              onClick={() => setSelectedStage(stage.status)}
-              title={stage.status}
-            >
-              <i style={{ height: `${Math.max(12, (stage.count / Math.max(leads.length, 1)) * 100)}%`, '--delay': `${index * 80}ms` }} />
-              <span>{stage.status}</span>
-            </button>
-          ))}
+          <div className="pipeline-spotlight__stats">
+            <span><strong>{leads.length}</strong><small>Total</small></span>
+            <span><strong>{selectedLeads.length}</strong><small>Selecionados</small></span>
+            <span><strong>{formatCurrency(selectedValue)}</strong><small>Valor</small></span>
+          </div>
         </div>
       </section>
 
-      {PIPELINE_STATUSES.map((status) => {
-        const columnLeads = leads.filter((lead) => lead.status === status)
-        const columnValue = columnLeads.reduce(
-          (total, lead) => total + Number(lead.valorEstimado || 0),
-          0,
-        )
+      <div className="pipeline-columns">
+        {PIPELINE_STATUSES.map((status) => {
+          const columnLeads = leads.filter((lead) => lead.status === status)
+          const columnValue = columnLeads.reduce(
+            (total, lead) => total + Number(lead.valorEstimado || 0),
+            0,
+          )
 
-        return (
-          <section className="pipeline-column" key={status}>
-            <button className="pipeline-column__header" type="button" onClick={() => setSelectedStage(status)}>
-              <div>
-                <span className={`column-dot column-dot--${columnTone[status]}`} />
-                <strong>{status}</strong>
-                <span className="pipeline-count">{columnLeads.length}</span>
+          return (
+            <section className={`pipeline-column ${selectedStage === status ? 'is-active' : ''}`} key={status}>
+              <button className="pipeline-column__header" type="button" onClick={() => setSelectedStage(status)}>
+                <div>
+                  <span className={`column-dot column-dot--${columnTone[status]}`} />
+                  <strong>{status}</strong>
+                  <span className="pipeline-count">{columnLeads.length}</span>
+                </div>
+                <small>{formatCurrency(columnValue)}</small>
+              </button>
+              <div className="pipeline-column__body">
+                {columnLeads.length ? (
+                  columnLeads.map((lead) => (
+                    <LeadCard
+                      key={lead.id}
+                      lead={lead}
+                      owner={findEmployeeByName(employees, lead.responsavel)}
+                      compact
+                      onEdit={onEdit}
+                      onDelete={onDelete}
+                      onStatusChange={onStatusChange}
+                    />
+                  ))
+                ) : (
+                  <div className="empty-column">Nenhum lead nesta etapa</div>
+                )}
               </div>
-              <small>{formatCurrency(columnValue)}</small>
-            </button>
-            <div className="pipeline-column__body">
-              {columnLeads.length ? (
-                columnLeads.map((lead) => (
-                  <LeadCard
-                    key={lead.id}
-                    lead={lead}
-                    owner={findEmployeeByName(employees, lead.responsavel)}
-                    compact
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                    onStatusChange={onStatusChange}
-                  />
-                ))
-              ) : (
-                <div className="empty-column">Nenhum lead nesta etapa</div>
-              )}
-            </div>
-          </section>
-        )
-      })}
+            </section>
+          )
+        })}
+      </div>
     </div>
   )
 }
