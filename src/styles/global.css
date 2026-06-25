@@ -1014,6 +1014,39 @@ h2 {
   font-weight: 800;
 }
 
+.messenger__contacts,
+.messenger__chat,
+.post-composer,
+.feed-post {
+  border-color: #d7dfee;
+}
+
+.messenger__header,
+.message-compose,
+.post-composer,
+.feed-post footer {
+  background: rgba(255,255,255,.96);
+}
+
+.message-list {
+  background:
+    linear-gradient(rgba(255,255,255,.88), rgba(255,255,255,.88)),
+    radial-gradient(circle at top left, rgba(87, 114, 230, 0.06), transparent 30%);
+}
+
+.message-bubble {
+  box-shadow: 0 7px 16px rgba(45, 63, 95, 0.06);
+}
+
+.emoji-row button:hover,
+.contact-profile-button:hover,
+.contact-coffee-button:hover,
+.messenger-view-switch button:hover,
+.messenger__new-thread:hover {
+  transform: translateY(-1px);
+  filter: saturate(1.08);
+}
+
 .confirm-modal p {
   margin: 10px auto 24px;
   padding: 0 28px;
