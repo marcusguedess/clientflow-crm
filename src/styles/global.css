@@ -3547,3 +3547,63 @@ select {
 .client-mini-row small {
   color: var(--text-muted);
 }
+
+.dashboard-ops-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.dashboard-ops-strip > div {
+  padding: 0.95rem 1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dashboard-ops-strip span,
+.dashboard-ops-strip small {
+  display: block;
+}
+
+.dashboard-ops-strip span {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.dashboard-ops-strip strong {
+  display: block;
+  margin: 0.25rem 0;
+  font-size: 1.35rem;
+  color: var(--text-primary);
+}
+
+.dashboard-ops-strip small {
+  color: var(--text-muted);
+}
+
+.three-showcase__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.three-showcase__controls button {
+  padding: 0.65rem 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+}
+
+.three-showcase__controls button.is-active {
+  border-color: var(--accent);
+  background: rgba(93, 124, 255, 0.18);
+  box-shadow: 0 0 0 1px rgba(93, 124, 255, 0.2);
+}
+
+.three-showcase__controls button:hover {
+  transform: translateY(-1px);
+}

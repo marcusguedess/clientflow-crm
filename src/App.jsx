@@ -416,7 +416,7 @@ export default function App() {
                 />
               </section>
 
-              <PerformanceDashboard leads={leads} employees={employees} />
+              <PerformanceDashboard leads={leads} employees={employees} tasks={tasks} />
 
               <section className="leads-section">
                 <div className="section-heading">

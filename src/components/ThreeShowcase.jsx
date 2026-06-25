@@ -10,9 +10,18 @@ const stageWeights = {
   Perdido: 0.24,
 }
 
+const modes = [
+  { id: 'overview', label: 'Visão geral' },
+  { id: 'revenue', label: 'Receita' },
+  { id: 'pipeline', label: 'Pipeline' },
+  { id: 'team', label: 'Equipe' },
+]
+
 export default function ThreeShowcase({ statusHealth, employees }) {
   const mountRef = useRef(null)
   const [hasWebGL, setHasWebGL] = useState(true)
+  const [mode, setMode] = useState('overview')
+  const [selectedLabel, setSelectedLabel] = useState('Clique em um modo')
 
   useEffect(() => {
     const mount = mountRef.current
@@ -39,6 +48,12 @@ export default function ThreeShowcase({ statusHealth, employees }) {
       const primary = getComputedStyle(themeRoot).getPropertyValue('--accent-primary').trim() || '#6b56e8'
       const secondary = getComputedStyle(themeRoot).getPropertyValue('--accent-secondary').trim() || '#25c6a4'
       const warm = getComputedStyle(themeRoot).getPropertyValue('--accent-warm').trim() || '#f5a94c'
+      const modePalette = {
+        overview: primary,
+        revenue: warm,
+        pipeline: secondary,
+        team: '#8f6dff',
+      }
 
       scene.add(new THREE.AmbientLight(0xffffff, 1.6))
       const keyLight = new THREE.DirectionalLight(0xffffff, 2.1)
@@ -63,6 +78,7 @@ export default function ThreeShowcase({ statusHealth, employees }) {
       group.add(grid)
 
       const maxValue = Math.max(...statusHealth.map((item) => item.value), 1)
+      const interactiveItems = []
       statusHealth.forEach((item, index) => {
         const height = Math.max(0.45, (item.value / maxValue) * 3.8)
         const color = index % 2 ? secondary : primary
@@ -72,7 +88,9 @@ export default function ThreeShowcase({ statusHealth, employees }) {
         )
         tower.position.set(-4.6 + index * 1.84, height / 2, -0.8)
         tower.scale.z = 0.72 + stageWeights[item.status]
+        tower.userData = { label: `${item.status} · ${item.count} negócios`, mode: 'pipeline' }
         group.add(tower)
+        interactiveItems.push(tower)
 
         const cap = new THREE.Mesh(
           new THREE.BoxGeometry(0.9, 0.12, 0.9),
@@ -94,8 +112,48 @@ export default function ThreeShowcase({ statusHealth, employees }) {
         avatar.add(body, head)
         avatar.position.set(-4.6 + lane * 1.84, 0.35, 2.05 + row * 0.72)
         avatar.rotation.y = -0.4 + lane * 0.12
+        avatar.userData = { label: employee.nome, mode: 'team' }
         group.add(avatar)
+        interactiveItems.push(avatar)
       })
+
+      const pulseRing = new THREE.Mesh(
+        new THREE.TorusGeometry(4.5, 0.06, 12, 96),
+        new THREE.MeshStandardMaterial({ color: new THREE.Color(modePalette[mode]), emissive: new THREE.Color(modePalette[mode]), emissiveIntensity: 0.24 }),
+      )
+      pulseRing.rotation.x = Math.PI / 2
+      pulseRing.position.y = 0.12
+      group.add(pulseRing)
+
+      const rayMaterial = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(modePalette[mode]),
+        transparent: true,
+        opacity: 0.16,
+        emissive: new THREE.Color(modePalette[mode]),
+        emissiveIntensity: 0.4,
+      })
+      const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.28, 4.8, 5, 1, true), rayMaterial)
+      beam.position.set(0, 2.4, 0)
+      group.add(beam)
+
+      const raycast = new THREE.Raycaster()
+      const pointer = new THREE.Vector2()
+
+      function handlePointer(event) {
+        const rect = mount.getBoundingClientRect()
+        pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+        pointer.y = -(((event.clientY - rect.top) / rect.height) * 2 - 1)
+        raycast.setFromCamera(pointer, camera)
+        const hits = raycast.intersectObjects(interactiveItems, true)
+        if (hits.length) {
+          const hit = hits[0].object
+          const source = hit.parent || hit
+          setSelectedLabel(source.userData.label || 'Elemento selecionado')
+          setMode(source.userData.mode || 'overview')
+        }
+      }
+
+      mount.addEventListener('pointerdown', handlePointer)
 
       function resize() {
         const width = mount.clientWidth || 800
@@ -112,9 +170,17 @@ export default function ThreeShowcase({ statusHealth, employees }) {
       const clock = new THREE.Clock()
       function animate() {
         const elapsed = clock.getElapsedTime()
-        group.rotation.y = Math.sin(elapsed * 0.28) * 0.08
+        const spin = mode === 'revenue' ? 0.15 : mode === 'pipeline' ? 0.08 : mode === 'team' ? 0.05 : 0.1
+        group.rotation.y = Math.sin(elapsed * 0.28) * spin
+        pulseRing.material.color = new THREE.Color(modePalette[mode])
+        pulseRing.material.emissive = new THREE.Color(modePalette[mode])
+        beam.material.color = new THREE.Color(modePalette[mode])
+        beam.material.emissive = new THREE.Color(modePalette[mode])
+        beam.scale.y = mode === 'team' ? 1.16 : mode === 'revenue' ? 1.34 : 1
         group.children.forEach((child, index) => {
           if (child.type === 'Group') child.position.y = 0.35 + Math.sin(elapsed * 1.8 + index) * 0.035
+          if (child.userData?.mode === mode) child.scale.setScalar(1.08 + Math.sin(elapsed * 3 + index) * 0.015)
+          else if (child.userData) child.scale.setScalar(0.96)
         })
         renderer.render(scene, camera)
         animationFrame = window.requestAnimationFrame(animate)
@@ -123,6 +189,7 @@ export default function ThreeShowcase({ statusHealth, employees }) {
 
       return () => {
         window.cancelAnimationFrame(animationFrame)
+        mount.removeEventListener('pointerdown', handlePointer)
         observer?.disconnect()
         scene.traverse((object) => {
           object.geometry?.dispose?.()
@@ -139,14 +206,21 @@ export default function ThreeShowcase({ statusHealth, employees }) {
       renderer?.domElement?.remove()
       return undefined
     }
-  }, [employees, statusHealth])
+  }, [employees, statusHealth, mode])
 
   return (
     <section className="three-showcase">
       <div className="three-showcase__copy">
         <span className="eyebrow">Visão 3D</span>
-        <h2>Mapa volumétrico do funil</h2>
-        <p>Torres representam valor por etapa; personagens representam a equipe ativa na operação comercial.</p>
+        <h2>Holograma clicável do CRM</h2>
+        <p>{selectedLabel}. Clique em modos, torres ou avatares para alterar a leitura do painel.</p>
+      </div>
+      <div className="three-showcase__controls" role="tablist" aria-label="Modos do holograma">
+        {modes.map((item) => (
+          <button key={item.id} className={mode === item.id ? 'is-active' : ''} onClick={() => { setMode(item.id); setSelectedLabel(item.label) }} type="button">
+            {item.label}
+          </button>
+        ))}
       </div>
       <div className="three-showcase__stage" ref={mountRef}>
         {!hasWebGL && <span>Renderização 3D indisponível neste navegador.</span>}

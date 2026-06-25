@@ -72,7 +72,7 @@ function AreaChart({ values, selectedIndex, onSelect }) {
   )
 }
 
-export default function PerformanceDashboard({ leads, employees }) {
+export default function PerformanceDashboard({ leads, employees, tasks = [] }) {
   const [period, setPeriod] = useState('30d')
   const [selectedPoint, setSelectedPoint] = useState(6)
   const [rankingMode, setRankingMode] = useState('score')
@@ -152,6 +152,9 @@ export default function PerformanceDashboard({ leads, employees }) {
   const stalled = filteredLeads.filter((lead) => ['Novo Lead', 'Contato Feito'].includes(lead.status) && Number(lead.valorEstimado || 0) >= 10000)
   const bestOwner = performance[0]
   const bestSource = sourceData[0]
+  const overdueTasks = tasks.filter((task) => task.dueDate && new Date(`${task.dueDate}T23:59:59`) < new Date())
+  const urgentTasks = tasks.filter((task) => task.priority === 'Alta')
+  const activeTasks = tasks.filter((task) => ['Planejado', 'Em andamento', 'Aguardando'].includes(task.status))
 
   return (
     <section className="performance-dashboard">
@@ -181,6 +184,13 @@ export default function PerformanceDashboard({ leads, employees }) {
         <div className="metric-glow metric-glow--violet"><small>Forecast</small><strong>{formatCurrency(weightedForecast)}</strong><span>{coverage}% de cobertura da meta</span><b>{formatCurrency(metrics.averageTicket)}</b></div>
       </div>
 
+      <div className="dashboard-ops-strip">
+        <div><span>Tarefas ativas</span><strong>{activeTasks.length}</strong><small>Em execução ou aguardando</small></div>
+        <div><span>Urgentes</span><strong>{urgentTasks.length}</strong><small>Prioridade alta no fluxo</small></div>
+        <div><span>Atrasadas</span><strong>{overdueTasks.length}</strong><small>Datas vencidas</small></div>
+        <div><span>Melhor canal</span><strong>{bestSource ? bestSource[0] : 'N/A'}</strong><small>Maior tração comercial</small></div>
+      </div>
+
       <section className="dashboard-briefing">
         <div>
           <span className="eyebrow">Leitura executiva</span>
@@ -195,6 +205,7 @@ export default function PerformanceDashboard({ leads, employees }) {
           <span><strong>{formatCurrency(metrics.pipeline)}</strong><small>Pipeline bruto</small></span>
           <span><strong>{formatCurrency(weightedForecast)}</strong><small>Forecast ponderado</small></span>
           <span><strong>{stalled.length}</strong><small>Alertas comerciais</small></span>
+          <span><strong>{urgentTasks.length}</strong><small>Tarefas críticas</small></span>
         </div>
       </section>
 
