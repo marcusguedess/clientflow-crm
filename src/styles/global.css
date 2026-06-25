@@ -2139,6 +2139,21 @@ h2 {
   font-size: 9px;
 }
 
+.three-showcase__toolbar {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.three-showcase__toggle {
+  justify-self: start;
+  padding: 0.65rem 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
 .swatch-row button {
   width: 25px;
   height: 25px;

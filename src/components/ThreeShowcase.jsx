@@ -22,6 +22,7 @@ export default function ThreeShowcase({ statusHealth, employees }) {
   const [hasWebGL, setHasWebGL] = useState(true)
   const [mode, setMode] = useState('overview')
   const [selectedLabel, setSelectedLabel] = useState('Clique em um modo')
+  const [controlsOpen, setControlsOpen] = useState(true)
 
   useEffect(() => {
     const mount = mountRef.current
@@ -215,12 +216,19 @@ export default function ThreeShowcase({ statusHealth, employees }) {
         <h2>Holograma clicável do CRM</h2>
         <p>{selectedLabel}. Clique em modos, torres ou avatares para alterar a leitura do painel.</p>
       </div>
-      <div className="three-showcase__controls" role="tablist" aria-label="Modos do holograma">
-        {modes.map((item) => (
-          <button key={item.id} className={mode === item.id ? 'is-active' : ''} onClick={() => { setMode(item.id); setSelectedLabel(item.label) }} type="button">
-            {item.label}
-          </button>
-        ))}
+      <div className="three-showcase__toolbar">
+        <button className="three-showcase__toggle" type="button" onClick={() => setControlsOpen((current) => !current)}>
+          {controlsOpen ? 'Fechar controle visual' : 'Abrir controle visual'}
+        </button>
+        {controlsOpen && (
+          <div className="three-showcase__controls" role="tablist" aria-label="Modos do holograma">
+            {modes.map((item) => (
+              <button key={item.id} className={mode === item.id ? 'is-active' : ''} onClick={() => { setMode(item.id); setSelectedLabel(item.label) }} type="button">
+                {item.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <div className="three-showcase__stage" ref={mountRef}>
         {!hasWebGL && <span>Renderização 3D indisponível neste navegador.</span>}
