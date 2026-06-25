@@ -14,10 +14,17 @@ export const navigationGroups = [
     ],
   },
   {
+    id: 'communication',
+    label: 'Comunicação',
+    items: [
+      { id: 'messenger', label: 'Flow Chat', icon: 'chat' },
+      { id: 'mail', label: 'Flow Mail', icon: 'mail' },
+    ],
+  },
+  {
     id: 'world',
     label: 'Cultura & mundo',
     items: [
-      { id: 'messenger', label: 'Mensageira', icon: 'chat' },
       { id: 'city', label: 'ClientFlow City', icon: 'city' },
       { id: 'team', label: 'People & equipe', icon: 'people' },
     ],
@@ -73,8 +80,12 @@ export const viewCopy = {
     subtitle: 'Rituais, perfis e cultura conectados ao espaço virtual da empresa.',
   },
   messenger: {
-    title: 'Flow Messenger',
+    title: 'Flow Chat',
     subtitle: 'Conversas diretas, grupos e setores sem sair do fluxo de trabalho.',
+  },
+  mail: {
+    title: 'Flow Mail',
+    subtitle: 'Caixa corporativa, triagem e follow-ups em um só lugar.',
   },
   city: {
     title: 'ClientFlow City',

@@ -7,6 +7,7 @@ import CommercialWorkspace from './components/CommercialWorkspace'
 import DashboardHome from './components/DashboardHome'
 import FloatingChat from './components/FloatingChat'
 import Header from './components/Header'
+import MailHub from './components/MailHub'
 import MessengerPage from './components/MessengerPage'
 import LeadForm from './components/LeadForm'
 import OfficeCity from './components/OfficeCity'
@@ -69,7 +70,13 @@ export default function App() {
   const [teamContactId, setTeamContactId] = useState(null)
   const [privacyMode, setPrivacyMode] = useState(false)
   const [theme, setTheme] = usePersistentState('clientflow-theme-v1', 'aurora', (value) =>
-    ['aurora', 'sunset', 'ocean', 'lime', 'neon', 'candy', 'executive', 'arcade'].includes(value) ? value : 'aurora',
+    ['aurora', 'sunset', 'ocean', 'lime', 'neon', 'candy', 'executive', 'arcade', 'terracotta', 'olive', 'copper', 'coffee'].includes(value) ? value : 'aurora',
+  )
+  const [visualMode, setVisualMode] = usePersistentState('clientflow-visual-mode-v1', 'balanced', (value) =>
+    ['essential', 'balanced', 'immersive'].includes(value) ? value : 'balanced',
+  )
+  const [density, setDensity] = usePersistentState('clientflow-density-v1', 'comfortable', (value) =>
+    ['comfortable', 'compact'].includes(value) ? value : 'comfortable',
   )
   const [soundEnabled, setSoundEnabled] = usePersistentState('clientflow-sound-v1', true, (value) => value !== false)
   const actionLogRef = useRef({})
@@ -334,7 +341,7 @@ export default function App() {
   }
 
   return (
-    <div className={`app-shell theme-${theme} ${privacyMode ? 'privacy-mode' : ''}`}>
+    <div className={`app-shell theme-${theme} visual-${visualMode} density-${density} ${privacyMode ? 'privacy-mode' : ''}`}>
       <Sidebar
         activeView={activeView}
         onViewChange={setActiveView}
@@ -426,6 +433,15 @@ export default function App() {
             />
           )}
 
+          {activeView === 'mail' && (
+            <MailHub
+              employees={employees}
+              currentEmployee={currentEmployee}
+              leads={leads}
+              onOpenProfile={setProfileEmployee}
+            />
+          )}
+
           {activeView === 'city' && (
             <OfficeCity
               employees={employees}
@@ -512,7 +528,16 @@ export default function App() {
       )}
 
       <FloatingChat employees={employees} onOpenMessenger={() => setActiveView('messenger')} />
-      <ThemeStudio theme={theme} onChange={(nextTheme) => { playSound('click', soundEnabled); setTheme(nextTheme) }} soundEnabled={soundEnabled} onToggleSound={() => setSoundEnabled((current) => !current)} />
+      <ThemeStudio
+        theme={theme}
+        onChange={(nextTheme) => { playSound('click', soundEnabled); setTheme(nextTheme) }}
+        visualMode={visualMode}
+        onVisualModeChange={setVisualMode}
+        density={density}
+        onDensityChange={setDensity}
+        soundEnabled={soundEnabled}
+        onToggleSound={() => setSoundEnabled((current) => !current)}
+      />
       <button
         className={`privacy-toggle ${privacyMode ? 'is-active' : ''}`}
         onClick={() => setPrivacyMode((current) => !current)}

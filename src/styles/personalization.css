@@ -1,0 +1,666 @@
+.app-shell {
+  --accent-primary: #6b56e8;
+  --accent-secondary: #25c6a4;
+  --accent-warm: #f5a94c;
+  --accent-soft: #f0edff;
+  --shell-bg: #eef2f8;
+  --shell-bg-strong: #f9fbff;
+  --surface-color: #ffffff;
+  --surface-subtle: #f7f9fc;
+  --sidebar-start: #111a2e;
+  --sidebar-end: #1a2944;
+  --sidebar-highlight: rgba(107, 86, 232, 0.46);
+  --theme-border: #d8e0ec;
+  --theme-text: #142033;
+  --theme-muted: #657185;
+  --theme-shadow: 0 16px 42px rgba(17, 29, 51, 0.09);
+  --theme-shadow-strong: 0 24px 64px rgba(17, 29, 51, 0.15);
+  color: var(--theme-text);
+  background:
+    radial-gradient(circle at 80% 0%, color-mix(in srgb, var(--accent-secondary) 10%, transparent), transparent 26%),
+    radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--accent-primary) 10%, transparent), transparent 28%),
+    linear-gradient(145deg, var(--shell-bg-strong), var(--shell-bg));
+}
+
+.app-shell.theme-sunset {
+  --accent-primary: #df536d;
+  --accent-secondary: #e8a03d;
+  --accent-warm: #7955c7;
+  --accent-soft: #fff0f2;
+  --shell-bg: #f7eef1;
+  --shell-bg-strong: #fff9f7;
+  --sidebar-start: #2d1824;
+  --sidebar-end: #4a2631;
+  --sidebar-highlight: rgba(232, 160, 61, 0.42);
+}
+
+.app-shell.theme-ocean {
+  --accent-primary: #246bdc;
+  --accent-secondary: #1aa9bd;
+  --accent-warm: #7861cf;
+  --accent-soft: #eaf4ff;
+  --shell-bg: #eaf3f8;
+  --shell-bg-strong: #f7fcff;
+  --sidebar-start: #0d2035;
+  --sidebar-end: #143b52;
+  --sidebar-highlight: rgba(35, 185, 206, 0.4);
+}
+
+.app-shell.theme-lime {
+  --accent-primary: #238467;
+  --accent-secondary: #8bad35;
+  --accent-warm: #dd9138;
+  --accent-soft: #eef7e8;
+  --shell-bg: #eef3e9;
+  --shell-bg-strong: #fbfdf8;
+  --sidebar-start: #17281f;
+  --sidebar-end: #284232;
+  --sidebar-highlight: rgba(154, 203, 56, 0.34);
+}
+
+.app-shell.theme-neon {
+  --accent-primary: #00a8d4;
+  --accent-secondary: #d534c8;
+  --accent-warm: #dcb72d;
+  --accent-soft: #edfaff;
+  --shell-bg: #eaf3f7;
+  --shell-bg-strong: #fbfdff;
+  --sidebar-start: #101329;
+  --sidebar-end: #25204b;
+  --sidebar-highlight: rgba(230, 59, 216, 0.46);
+}
+
+.app-shell.theme-candy {
+  --accent-primary: #df5797;
+  --accent-secondary: #35b8de;
+  --accent-warm: #e9a83c;
+  --accent-soft: #fff0fa;
+  --shell-bg: #f7eef8;
+  --shell-bg-strong: #fffafe;
+  --sidebar-start: #30203a;
+  --sidebar-end: #492b50;
+  --sidebar-highlight: rgba(67, 201, 243, 0.38);
+}
+
+.app-shell.theme-executive {
+  --accent-primary: #374c80;
+  --accent-secondary: #15977f;
+  --accent-warm: #bd9135;
+  --accent-soft: #eef4f8;
+  --shell-bg: #edf1f5;
+  --shell-bg-strong: #fafcfe;
+  --sidebar-start: #151e30;
+  --sidebar-end: #263653;
+  --sidebar-highlight: rgba(25, 185, 154, 0.34);
+}
+
+.app-shell.theme-arcade {
+  --accent-primary: #7136e3;
+  --accent-secondary: #16ad72;
+  --accent-warm: #ddb129;
+  --accent-soft: #f3efff;
+  --shell-bg: #eeeef8;
+  --shell-bg-strong: #fbfaff;
+  --sidebar-start: #17132d;
+  --sidebar-end: #30235a;
+  --sidebar-highlight: rgba(248, 198, 61, 0.38);
+}
+
+.app-shell.theme-terracotta {
+  --accent-primary: #ad583e;
+  --accent-secondary: #c88b4c;
+  --accent-warm: #4f7a72;
+  --accent-soft: #f8ece6;
+  --shell-bg: #eee5df;
+  --shell-bg-strong: #fbf7f3;
+  --surface-subtle: #f8f2ed;
+  --sidebar-start: #2c211d;
+  --sidebar-end: #53362b;
+  --sidebar-highlight: rgba(214, 154, 86, 0.42);
+  --theme-border: #dfd2c8;
+  --theme-muted: #76675f;
+}
+
+.app-shell.theme-olive {
+  --accent-primary: #66763e;
+  --accent-secondary: #a78d48;
+  --accent-warm: #a45f43;
+  --accent-soft: #f0f2e7;
+  --shell-bg: #e8e9df;
+  --shell-bg-strong: #f9f9f4;
+  --surface-subtle: #f4f5ed;
+  --sidebar-start: #22271c;
+  --sidebar-end: #3d452b;
+  --sidebar-highlight: rgba(181, 154, 84, 0.4);
+  --theme-border: #d7d8c8;
+  --theme-muted: #6e705f;
+}
+
+.app-shell.theme-copper {
+  --accent-primary: #9c5536;
+  --accent-secondary: #4d7771;
+  --accent-warm: #c09450;
+  --accent-soft: #f4ebe6;
+  --shell-bg: #e9e4e0;
+  --shell-bg-strong: #faf7f4;
+  --surface-subtle: #f6f1ed;
+  --sidebar-start: #28211e;
+  --sidebar-end: #49362f;
+  --sidebar-highlight: rgba(82, 127, 120, 0.42);
+  --theme-border: #dbd0c8;
+  --theme-muted: #70655f;
+}
+
+.app-shell.theme-coffee {
+  --accent-primary: #6f4b38;
+  --accent-secondary: #a76e49;
+  --accent-warm: #69774a;
+  --accent-soft: #f2eae5;
+  --shell-bg: #e9e2dd;
+  --shell-bg-strong: #faf6f2;
+  --surface-subtle: #f5efea;
+  --sidebar-start: #241b18;
+  --sidebar-end: #443029;
+  --sidebar-highlight: rgba(180, 122, 82, 0.42);
+  --theme-border: #dbcec5;
+  --theme-muted: #71635b;
+}
+
+.app-shell .sidebar {
+  border-color: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+  background:
+    radial-gradient(circle at 12% 0%, var(--sidebar-highlight), transparent 30%),
+    linear-gradient(180deg, var(--sidebar-start), var(--sidebar-end));
+}
+
+.app-shell .sidebar__link.is-active {
+  background: linear-gradient(105deg, color-mix(in srgb, var(--accent-primary) 68%, transparent), color-mix(in srgb, var(--accent-secondary) 34%, transparent));
+  box-shadow: inset 3px 0 rgba(255, 255, 255, 0.92), 0 10px 22px color-mix(in srgb, var(--accent-primary) 20%, transparent);
+}
+
+.app-shell .main-content {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--shell-bg-strong) 92%, transparent), var(--shell-bg));
+}
+
+.app-shell .page-header {
+  border-color: var(--theme-border);
+  background: color-mix(in srgb, var(--surface-color) 88%, transparent);
+}
+
+.app-shell .content-area {
+  background:
+    radial-gradient(circle at 90% 4%, color-mix(in srgb, var(--accent-secondary) 8%, transparent), transparent 24%),
+    transparent;
+}
+
+.app-shell .home-welcome,
+.app-shell .commercial-hero,
+.app-shell .analytics-hero {
+  background:
+    radial-gradient(circle at 84% 18%, color-mix(in srgb, var(--accent-secondary) 28%, transparent), transparent 28%),
+    radial-gradient(circle at 12% 100%, color-mix(in srgb, var(--accent-warm) 20%, transparent), transparent 30%),
+    linear-gradient(125deg, var(--sidebar-start), color-mix(in srgb, var(--accent-primary) 48%, var(--sidebar-end)), var(--sidebar-end));
+}
+
+.app-shell .button--primary,
+.app-shell .dashboard-filter-bar button,
+.app-shell .commercial-tabs button.is-active,
+.app-shell .messenger-view-switch button.is-active,
+.app-shell .analytics-tabs button.is-active,
+.app-shell .period-tabs button.is-active,
+.app-shell .dashboard-profile-tabs button.is-active {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  box-shadow: 0 12px 26px color-mix(in srgb, var(--accent-primary) 22%, transparent);
+}
+
+.app-shell .stat-card,
+.app-shell .business-command-center,
+.app-shell .home-opportunities,
+.app-shell .decision-center,
+.app-shell .dashboard-filters,
+.app-shell .revenue-panel,
+.app-shell .goal-panel,
+.app-shell .conversion-panel,
+.app-shell .sources-panel,
+.app-shell .loss-reasons-panel,
+.app-shell .analytics-card,
+.app-shell .entity-card,
+.app-shell .entity-detail,
+.app-shell .lead-card,
+.app-shell .messenger,
+.app-shell .team-feed,
+.app-shell .people-command {
+  border-color: var(--theme-border);
+  background: color-mix(in srgb, var(--surface-color) 94%, var(--accent-soft));
+}
+
+.app-shell .home-destinations button,
+.app-shell .home-opportunity-list > button,
+.app-shell .decision-card,
+.app-shell .dashboard-ops-strip > div {
+  border-color: var(--theme-border);
+  background: color-mix(in srgb, var(--surface-color) 88%, var(--surface-subtle));
+}
+
+.app-shell .home-destinations svg {
+  color: var(--accent-primary);
+  background: color-mix(in srgb, var(--accent-primary) 11%, #fff);
+}
+
+.app-shell .home-destinations .home-destination--city svg {
+  color: var(--accent-secondary);
+  background: color-mix(in srgb, var(--accent-secondary) 12%, #fff);
+}
+
+.visual-essential {
+  --theme-shadow: none;
+  --theme-shadow-strong: 0 5px 14px rgba(17, 29, 51, 0.06);
+}
+
+.visual-essential,
+.visual-essential .main-content,
+.visual-essential .content-area,
+.visual-essential .home-welcome,
+.visual-essential .commercial-hero,
+.visual-essential .analytics-hero {
+  background-image: none;
+}
+
+.visual-essential .home-welcome,
+.visual-essential .commercial-hero,
+.visual-essential .analytics-hero {
+  color: var(--theme-text);
+  background: var(--surface-color);
+  border-color: var(--theme-border);
+  box-shadow: none;
+}
+
+.visual-essential .home-welcome h2,
+.visual-essential .home-welcome .eyebrow,
+.visual-essential .commercial-hero h2,
+.visual-essential .commercial-hero p,
+.visual-essential .commercial-hero .eyebrow,
+.visual-essential .analytics-hero h2,
+.visual-essential .analytics-hero .eyebrow {
+  color: var(--theme-text);
+}
+
+.visual-essential .home-welcome p {
+  color: var(--theme-muted);
+}
+
+.visual-essential .button--primary,
+.visual-essential .dashboard-filter-bar button,
+.visual-essential .commercial-tabs button.is-active,
+.visual-essential .messenger-view-switch button.is-active,
+.visual-essential .analytics-tabs button.is-active,
+.visual-essential .period-tabs button.is-active,
+.visual-essential .dashboard-profile-tabs button.is-active {
+  background: var(--accent-primary);
+  box-shadow: none;
+}
+
+.visual-essential .button,
+.visual-essential .stat-card,
+.visual-essential .decision-card,
+.visual-essential .home-destinations button {
+  border-radius: 8px;
+}
+
+.visual-essential .home-presence {
+  color: var(--theme-text);
+  background: var(--surface-subtle);
+  border-color: var(--theme-border);
+  backdrop-filter: none;
+}
+
+.visual-essential .home-presence span {
+  color: var(--theme-muted);
+}
+
+.visual-essential *,
+.visual-essential *::before,
+.visual-essential *::after {
+  animation-duration: 1ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 90ms !important;
+}
+
+.visual-essential .stat-card,
+.visual-essential .business-command-center,
+.visual-essential .home-opportunities,
+.visual-essential .decision-center,
+.visual-essential .dashboard-filters,
+.visual-essential .revenue-panel,
+.visual-essential .goal-panel,
+.visual-essential .conversion-panel,
+.visual-essential .sources-panel,
+.visual-essential .loss-reasons-panel,
+.visual-essential .analytics-card,
+.visual-essential .entity-card,
+.visual-essential .entity-detail,
+.visual-essential .lead-card {
+  box-shadow: none;
+}
+
+.visual-essential .goal-confetti,
+.visual-essential .content-area::before,
+.visual-essential .home-welcome::after {
+  display: none;
+}
+
+.visual-immersive {
+  --theme-shadow: 0 20px 48px color-mix(in srgb, var(--accent-primary) 13%, rgba(17, 29, 51, 0.1));
+  --theme-shadow-strong: 0 30px 72px color-mix(in srgb, var(--accent-primary) 20%, rgba(17, 29, 51, 0.14));
+}
+
+.visual-immersive .main-content {
+  background:
+    radial-gradient(circle at 88% 4%, color-mix(in srgb, var(--accent-secondary) 16%, transparent), transparent 24%),
+    radial-gradient(circle at 18% 24%, color-mix(in srgb, var(--accent-primary) 12%, transparent), transparent 30%),
+    linear-gradient(155deg, var(--shell-bg-strong), var(--shell-bg));
+}
+
+.visual-immersive .page-header {
+  border-bottom-color: color-mix(in srgb, var(--accent-primary) 18%, var(--theme-border));
+  box-shadow: 0 12px 34px color-mix(in srgb, var(--accent-primary) 8%, transparent);
+}
+
+.visual-immersive .stat-card,
+.visual-immersive .business-command-center,
+.visual-immersive .home-opportunities,
+.visual-immersive .decision-center,
+.visual-immersive .dashboard-filters,
+.visual-immersive .revenue-panel,
+.visual-immersive .goal-panel,
+.visual-immersive .conversion-panel,
+.visual-immersive .sources-panel,
+.visual-immersive .loss-reasons-panel,
+.visual-immersive .analytics-card,
+.visual-immersive .entity-card,
+.visual-immersive .entity-detail,
+.visual-immersive .lead-card {
+  box-shadow: var(--theme-shadow);
+}
+
+.visual-immersive .stat-card:hover,
+.visual-immersive .decision-card:hover,
+.visual-immersive .home-destinations button:hover,
+.visual-immersive .entity-card:hover,
+.visual-immersive .lead-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--theme-shadow-strong);
+}
+
+.visual-immersive .button--primary {
+  position: relative;
+  overflow: hidden;
+}
+
+.visual-immersive .button--primary::after {
+  position: absolute;
+  inset: -100% auto -100% -45%;
+  width: 32%;
+  content: "";
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.42), transparent);
+  transform: rotate(18deg);
+  animation: theme-button-glint 5s ease-in-out infinite;
+}
+
+.visual-immersive .home-welcome {
+  background:
+    radial-gradient(circle at 84% 18%, color-mix(in srgb, var(--accent-secondary) 36%, transparent), transparent 28%),
+    radial-gradient(circle at 12% 100%, color-mix(in srgb, var(--accent-warm) 28%, transparent), transparent 30%),
+    linear-gradient(125deg, var(--sidebar-start), color-mix(in srgb, var(--accent-primary) 55%, var(--sidebar-end)), var(--sidebar-end));
+}
+
+.density-compact .content-area {
+  padding-top: 20px;
+}
+
+.density-compact .dashboard-home,
+.density-compact .performance-dashboard,
+.density-compact .commercial-workspace,
+.density-compact .analytics-hub,
+.density-compact .clients-page,
+.density-compact .activities-page {
+  gap: 12px;
+}
+
+.density-compact .home-welcome {
+  padding: 20px;
+}
+
+.density-compact .stat-card,
+.density-compact .business-command-center,
+.density-compact .home-opportunities,
+.density-compact .decision-center,
+.density-compact .revenue-panel,
+.density-compact .goal-panel,
+.density-compact .conversion-panel,
+.density-compact .sources-panel,
+.density-compact .loss-reasons-panel,
+.density-compact .analytics-card,
+.density-compact .entity-card,
+.density-compact .lead-card {
+  padding: 12px;
+}
+
+.density-compact .stats-grid,
+.density-compact .home-destinations,
+.density-compact .decision-center__grid,
+.density-compact .dashboard-ops-strip,
+.density-compact .insight-grid,
+.density-compact .dashboard-deep-grid {
+  gap: 8px;
+}
+
+.density-compact .sidebar__link {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.theme-studio__panel {
+  width: min(380px, calc(100vw - 28px));
+  max-height: min(680px, calc(100vh - 92px));
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-primary) transparent;
+}
+
+.theme-studio__section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 13px 1px 8px;
+}
+
+.theme-studio__section-heading:first-of-type {
+  margin-top: 0;
+}
+
+.theme-studio__section-heading span {
+  color: var(--app-text);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.theme-studio__section-heading small {
+  color: var(--app-muted);
+  font-size: 9px;
+}
+
+.theme-studio__themes {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.theme-studio__themes button {
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 7px;
+  min-height: 38px;
+  padding: 6px 7px;
+}
+
+.theme-studio__themes i {
+  width: 19px;
+  height: 19px;
+}
+
+.theme-studio__themes span {
+  font-size: 9px;
+}
+
+.theme-studio__modes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.theme-studio__modes > button {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 8px;
+  min-height: 94px;
+  padding: 10px;
+  border: 1px solid #e0e6ef;
+  border-radius: 9px;
+  color: #526075;
+  text-align: left;
+  background: #f8fafc;
+}
+
+.theme-studio__modes > button:hover,
+.theme-studio__modes > button.is-active {
+  border-color: color-mix(in srgb, var(--accent-primary) 42%, #d8e0ec);
+  background: color-mix(in srgb, var(--accent-soft) 55%, #fff);
+}
+
+.theme-studio__modes > button.is-active {
+  box-shadow: inset 0 -3px 0 var(--accent-primary);
+}
+
+.theme-studio__modes > button > i {
+  width: 34px;
+  height: 22px;
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 30%, #cfd8e5);
+  border-radius: 6px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent-primary) 82%, #fff), color-mix(in srgb, var(--accent-secondary) 72%, #fff));
+  box-shadow: 5px 5px 0 color-mix(in srgb, var(--accent-warm) 18%, transparent);
+}
+
+.theme-studio__modes > button:first-child > i {
+  background: #eef1f5;
+  box-shadow: none;
+}
+
+.theme-studio__modes > button:nth-child(2) > i {
+  box-shadow: 3px 3px 0 color-mix(in srgb, var(--accent-primary) 14%, transparent);
+}
+
+.theme-studio__modes span,
+.theme-studio__modes strong,
+.theme-studio__modes small {
+  display: block;
+  min-width: 0;
+}
+
+.theme-studio__modes strong {
+  color: var(--app-text);
+  font-size: 10px;
+}
+
+.theme-studio__modes small {
+  margin-top: 3px;
+  color: var(--app-muted);
+  font-size: 8px;
+  line-height: 1.35;
+}
+
+.theme-studio__preferences {
+  display: grid;
+  gap: 9px;
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid #e0e6ef;
+  border-radius: 9px;
+  background: #f8fafc;
+}
+
+.theme-studio__preferences > div:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.theme-studio__preferences strong {
+  color: var(--app-text);
+  font-size: 10px;
+}
+
+.theme-studio__preferences small {
+  color: var(--app-muted);
+  font-size: 8px;
+}
+
+.theme-studio__segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 8px;
+  background: #e9edf3;
+}
+
+.theme-studio__segmented button {
+  min-height: 32px;
+  padding: 5px 7px;
+  border: 0;
+  border-radius: 6px;
+  color: #657185;
+  background: transparent;
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.theme-studio__segmented button.is-active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  box-shadow: 0 5px 12px color-mix(in srgb, var(--accent-primary) 20%, transparent);
+}
+
+@keyframes theme-button-glint {
+  0%, 70%, 100% { transform: translateX(-180%) rotate(18deg); }
+  84% { transform: translateX(520%) rotate(18deg); }
+}
+
+@media (max-width: 720px) {
+  .theme-studio__panel {
+    width: min(350px, calc(100vw - 28px));
+    max-height: calc(100vh - 86px);
+  }
+
+  .theme-studio__themes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .theme-studio__modes {
+    grid-template-columns: 1fr;
+  }
+
+  .theme-studio__modes > button {
+    grid-template-columns: 38px minmax(0, 1fr);
+    min-height: 60px;
+    align-items: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .visual-immersive .button--primary::after {
+    display: none;
+  }
+}

@@ -94,7 +94,7 @@ export default function MessengerPage({
   return (
     <section className="messenger-page">
       <div className="section-heading">
-        <div><span className="eyebrow">Comunicação</span><h2>Flow Messenger</h2></div>
+        <div><span className="eyebrow">Comunicação</span><h2>Flow Chat</h2></div>
         <span className="result-count">Bate-papo interno</span>
       </div>
 
@@ -102,7 +102,7 @@ export default function MessengerPage({
         <aside className="messenger__contacts">
           <div className="messenger__brand">
             <span className="messenger__orb">CF</span>
-            <div><strong>Flow Inbox</strong><small>Conversas, grupos e setores</small></div>
+            <div><strong>Flow Chat</strong><small>Conversas, grupos e setores</small></div>
           </div>
           <div className="messenger-view-switch">
             <button className={viewMode === 'direct' ? 'is-active' : ''} onClick={() => setViewMode('direct')} type="button">Diretas</button>
@@ -146,7 +146,7 @@ export default function MessengerPage({
               <EmployeeBadge employee={selected} compact onClick={() => onOpenProfile(selected)} />
             )}
             <div className="messenger__header-actions">
-              <span className="local-only-pill">Inbox operacional</span>
+              <span className="local-only-pill">Chat operacional</span>
               <button type="button" className="button button--ghost messenger__new-thread" onClick={() => setViewMode('direct')}>Nova conversa</button>
             </div>
           </header>

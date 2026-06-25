@@ -11,7 +11,7 @@ export default function FloatingChat({ employees, onOpenMessenger }) {
         <div className="floating-chat__panel">
           <header><strong>Equipe online</strong><button type="button" onClick={() => setOpen(false)} aria-label="Fechar equipe online">×</button></header>
           {online.map((employee) => <EmployeeBadge key={employee.id} employee={employee} compact />)}
-          <button className="button button--primary floating-chat__open" type="button" onClick={() => { setOpen(false); onOpenMessenger() }}>Abrir Flow Messenger</button>
+          <button className="button button--primary floating-chat__open" type="button" onClick={() => { setOpen(false); onOpenMessenger() }}>Abrir Flow Chat</button>
         </div>
       )}
       <button className="floating-chat__button" type="button" onClick={() => setOpen((current) => !current)} aria-label={open ? 'Fechar equipe online' : 'Abrir equipe online'} aria-expanded={open}>

@@ -39,6 +39,10 @@ function ChatIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 18.5 3 21l.7-4A8 8 0 1 1 5 18.5Z" /></svg>
 }
 
+function MailIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4.5 7.5 7.5 6 7.5-6" /><path d="M4.5 16.5 9.5 12" /><path d="M19.5 16.5 14.5 12" /></svg>
+}
+
 function ShieldIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6v6c0 5-3.4 8-8 9-4.6-1-8-4-8-9V6l8-3Z" /><path d="m9 12 2 2 4-5" /></svg>
 }
@@ -66,6 +70,7 @@ function CockpitIcon() {
 const icons = {
   activity: <ActivityIcon />,
   chat: <ChatIcon />,
+  mail: <MailIcon />,
   city: <CityIcon />,
   clients: <ClientIcon />,
   cockpit: <CockpitIcon />,
