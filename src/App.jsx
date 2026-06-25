@@ -201,7 +201,7 @@ export default function App() {
   }
 
   function resetDemo() {
-    if (window.confirm('Restaurar os 8 leads de demonstração? Seus dados atuais serão substituídos.')) {
+    if (window.confirm(`Restaurar os ${seedLeads.length} registros de demonstração? Seus dados atuais serão substituídos.`)) {
       setLeads(seedLeads.map((lead) => ({ ...lead })))
       setQuery('')
       setStatusFilter('Todos')

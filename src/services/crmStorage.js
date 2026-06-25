@@ -6,7 +6,14 @@ const LEGACY_KEY = 'clientflow-crm-leads'
 export function loadLeads(fallback = []) {
   try {
     const storedValue = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_KEY)
-    return storedValue ? sanitizeLeadList(JSON.parse(storedValue), fallback) : fallback
+    if (!storedValue) return fallback
+    const storedLeads = sanitizeLeadList(JSON.parse(storedValue), fallback)
+    const isOriginalDemo =
+      storedLeads.length <= 8 &&
+      storedLeads.every((lead) => /^lead-00[1-8]$/.test(lead.id))
+    return isOriginalDemo
+      ? [...storedLeads, ...fallback.filter((lead) => !storedLeads.some((stored) => stored.id === lead.id))]
+      : storedLeads
   } catch (error) {
     console.warn('Não foi possível carregar os leads salvos.', error)
     return fallback
