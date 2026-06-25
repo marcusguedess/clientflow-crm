@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="ClientFlow CRM">
+  <defs>
+    <linearGradient id="bg" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#8d5cff"/>
+      <stop offset="52%" stop-color="#2e78ff"/>
+      <stop offset="100%" stop-color="#27c5a1"/>
+    </linearGradient>
+    <linearGradient id="mark" x1="18" y1="18" x2="46" y2="46" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#d8f3ff"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#bg)"/>
+  <path d="M20 21h18.5c5.2 0 9.5 4.2 9.5 9.5S43.7 40 38.5 40H27v6h-7V21Zm7 7v5h11c1.9 0 3.5-1.4 3.5-3.5S39.9 26 38 26H27Z" fill="url(#mark)"/>
+  <circle cx="45" cy="19" r="3.5" fill="#fff" opacity=".92"/>
+</svg>
