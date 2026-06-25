@@ -782,10 +782,21 @@ h2 {
 
 .pipeline-board {
   display: grid;
-  grid-template-columns: repeat(6, minmax(245px, 1fr));
-  gap: 13px;
-  overflow-x: auto;
+  gap: 16px;
+  overflow: visible;
   padding: 2px 2px 18px;
+}
+
+.pipeline-board > :is(.pipeline-dash, .pipeline-spotlight) {
+  grid-column: 1 / -1;
+}
+
+.pipeline-board {
+  grid-template-columns: repeat(6, minmax(240px, 1fr));
+}
+
+.pipeline-board > .pipeline-column {
+  min-width: 0;
 }
 
 .pipeline-column {
@@ -802,12 +813,17 @@ h2 {
   justify-content: space-between;
   gap: 8px;
   padding: 3px 3px 13px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
 }
 
 .pipeline-column__header > div {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 7px;
+  min-width: 0;
 }
 
 .pipeline-column__header strong {
@@ -837,6 +853,10 @@ h2 {
   background: #fff;
   font-size: 9px;
   font-weight: 700;
+}
+
+.pipeline-column__header:hover {
+  background: rgba(255, 255, 255, 0.34);
 }
 
 .pipeline-column__body {
@@ -892,6 +912,34 @@ h2 {
   border-radius: 10px;
   color: #929aaa;
   font-size: 10px;
+}
+
+@media (max-width: 1400px) {
+  .pipeline-board {
+    grid-template-columns: repeat(3, minmax(240px, 1fr));
+  }
+
+  .pipeline-board > :is(.pipeline-dash, .pipeline-spotlight) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 980px) {
+  .pipeline-board {
+    grid-template-columns: 1fr;
+  }
+
+  .pipeline-dash {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pipeline-spotlight {
+    grid-template-columns: 1fr;
+  }
+
+  .pipeline-spotlight__bars {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .modal-backdrop {
