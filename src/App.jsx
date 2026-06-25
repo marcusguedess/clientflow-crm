@@ -225,7 +225,7 @@ export default function App() {
     setActiveView('team')
   }
 
-  function sendMessage(employeeId, text) {
+  function sendMessage(threadId, text) {
     if (!allowAction('message')) return
     const safeText = cleanText(text, 500)
     if (!safeText) return
@@ -237,7 +237,7 @@ export default function App() {
     }
     setMessages((current) => ({
       ...current,
-      [employeeId]: [...(current[employeeId] || []), newMessage].slice(-100),
+      [threadId]: [...(current[threadId] || []), newMessage].slice(-100),
     }))
   }
 

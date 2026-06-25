@@ -1,6 +1,6 @@
 :root {
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: #19233a;
+  font-family: 'Segoe UI Variable Text', 'Aptos', 'ui-rounded', 'Trebuchet MS', ui-sans-serif, system-ui, sans-serif;
+  color: #152038;
   background: #f4f6fa;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -24,8 +24,9 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background:
+    radial-gradient(circle at 10% 5%, rgba(57, 150, 255, 0.11), transparent 28%),
     radial-gradient(circle at 100% 0%, rgba(90, 122, 220, 0.08), transparent 30%),
-    #f4f6fa;
+    linear-gradient(135deg, #f7f9ff 0%, #edf2fb 48%, #f7fbff 100%);
   cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 2l13 11-6 .7L8 20z' fill='%2317233c' stroke='white' stroke-width='1.5'/%3E%3C/svg%3E") 3 2, auto;
 }
 
@@ -90,10 +91,10 @@ svg {
 
 .logo__text {
   color: #fff;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Segoe UI Variable Display', 'Aptos Display', 'ui-rounded', sans-serif;
   font-size: 17px;
   font-weight: 800;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.02em;
 }
 
 .logo__text small {
@@ -251,8 +252,8 @@ h1,
 h2 {
   margin: 0;
   color: #17213a;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: -0.6px;
+  font-family: 'Segoe UI Variable Display', 'Aptos Display', 'ui-rounded', sans-serif;
+  letter-spacing: -0.02em;
 }
 
 .page-header h1 {
@@ -454,9 +455,9 @@ h2 {
   overflow: hidden;
   margin: 4px 0 2px;
   color: #18223a;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Segoe UI Variable Display', 'Aptos Display', 'ui-rounded', sans-serif;
   font-size: clamp(20px, 2vw, 25px);
-  letter-spacing: -0.8px;
+  letter-spacing: -0.02em;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1008,7 +1009,7 @@ h2 {
   border-radius: 14px;
   color: #ca4253;
   background: #ffedf0;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Segoe UI Variable Display', 'Aptos Display', 'ui-rounded', sans-serif;
   font-size: 22px;
   font-weight: 800;
 }
@@ -1278,7 +1279,7 @@ h2 {
 .messenger {
   display: grid;
   min-height: 650px;
-  grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-columns: 250px minmax(0, 1fr);
   overflow: hidden;
   border: 1px solid #dfe4ee;
   border-radius: 20px;
@@ -1291,7 +1292,7 @@ h2 {
   border-right: 1px solid #e6e9f0;
   background:
     radial-gradient(circle at 20% 0, rgba(142, 95, 231, 0.22), transparent 32%),
-    linear-gradient(180deg, #f4f0ff, #f7f9ff);
+    linear-gradient(180deg, #f5f2ff, #f7fbff);
 }
 
 .messenger__brand {
@@ -1315,6 +1316,31 @@ h2 {
   margin-top: 2px;
   color: #887ca3;
   font-size: 9px;
+}
+
+.messenger-view-switch {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 0 4px 14px;
+}
+
+.messenger-view-switch button {
+  min-height: 28px;
+  padding: 0 8px;
+  border: 1px solid #dfe4ef;
+  border-radius: 10px;
+  color: #647087;
+  background: rgba(255,255,255,.78);
+  font-size: 8px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.messenger-view-switch button.is-active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--accent-primary) 18%, transparent);
 }
 
 .messenger__orb {
@@ -1341,6 +1367,35 @@ h2 {
   box-shadow: 0 5px 16px rgba(69, 53, 110, 0.1);
 }
 
+.channel-row {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px 10px 12px;
+  border: 0;
+  border-radius: 13px;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+}
+
+.channel-row strong,
+.channel-row small {
+  display: block;
+}
+
+.channel-row strong {
+  color: #17213a;
+  font-size: 12px;
+}
+
+.channel-row small {
+  margin-top: 2px;
+  color: #7b8598;
+  font-size: 9px;
+}
+
 .contact-profile-button {
   position: absolute;
   top: 13px;
@@ -1356,6 +1411,35 @@ h2 {
   background: #fff;
   font-size: 9px;
   font-weight: 800;
+}
+
+.contact-actions {
+  position: absolute;
+  top: 10px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.contact-profile-button,
+.contact-coffee-button {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid #d9ddea;
+  border-radius: 50%;
+  color: #776d91;
+  background: #fff;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.contact-coffee-button {
+  color: #9c6b24;
+  background: linear-gradient(135deg, #fff8e8, #fff);
 }
 
 .messenger__chat {
@@ -1379,6 +1463,38 @@ h2 {
 
 .messenger__header .employee-badge {
   width: auto;
+}
+
+.messenger__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.messenger__new-thread {
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 10px;
+  font-size: 8px;
+}
+
+.channel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.channel-header strong {
+  display: block;
+  color: #152038;
+  font-size: 13px;
+}
+
+.channel-header small {
+  display: block;
+  margin-top: 2px;
+  color: #7b8598;
+  font-size: 9px;
 }
 
 .local-only-pill {
@@ -1429,10 +1545,10 @@ h2 {
   display: block;
   padding: 10px 13px;
   border-radius: 5px 15px 15px 15px;
-  color: #3c465b;
-  background: #edf0f6;
+  color: #2e3950;
+  background: #edf1f7;
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .message-row--mine .message-bubble {
@@ -1449,7 +1565,7 @@ h2 {
 }
 
 .message-compose {
-  display: flex;
+  display: grid;
   gap: 10px;
   padding: 15px;
   border-top: 1px solid #e8ebf1;
@@ -1458,16 +1574,31 @@ h2 {
 
 .message-compose input {
   min-width: 0;
-  flex: 1;
+  width: 100%;
   padding: 0 14px;
   border: 1px solid #dce1ea;
   border-radius: 11px;
+  min-height: 44px;
 }
 
 .team-feed {
   display: grid;
   align-content: start;
   gap: 14px;
+}
+
+.team-feed__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 4px;
+}
+
+.team-feed__header h3 {
+  margin: 2px 0 0;
+  color: #152038;
+  font-size: 16px;
 }
 
 .post-composer,
@@ -1491,6 +1622,7 @@ h2 {
   border: 1px solid #dfe3eb;
   border-radius: 10px;
   resize: none;
+  color: #2e3950;
 }
 
 .post-composer .button {
