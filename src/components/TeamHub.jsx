@@ -14,6 +14,7 @@ export default function TeamHub({
   onOpenProfile,
   initialContactId,
 }) {
+  const [search, setSearch] = useState('')
   const contacts = employees.filter((employee) => employee.id !== currentEmployee.id)
   const channelMap = useMemo(() => {
     const sectors = [...new Set(employees.map((employee) => employee.setor))]
@@ -64,6 +65,16 @@ export default function TeamHub({
   const [post, setPost] = useState('')
   const emojis = ['👍', '🎉', '🔥', '✨', '😂', '🚀', '❤️', '☕']
   const channels = channelMap[viewMode]
+  const visibleChannels = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase()
+    if (!normalizedSearch) return channels
+    return channels.filter((channel) =>
+      [channel.label, channel.kind, ...(channel.members || []).map((member) => member.nome), ...(channel.members || []).map((member) => member.setor)]
+        .join(' ')
+        .toLowerCase()
+        .includes(normalizedSearch),
+    )
+  }, [channels, search])
   const selected = employees.find((employee) => employee.id === selectedId) || channels.find((channel) => channel.id === selectedId)
   const conversation = useMemo(() => messages[selectedId] || [], [messages, selectedId])
 
@@ -105,7 +116,13 @@ export default function TeamHub({
             <button className={viewMode === 'groups' ? 'is-active' : ''} onClick={() => setViewMode('groups')} type="button">Grupos</button>
             <button className={viewMode === 'sectors' ? 'is-active' : ''} onClick={() => setViewMode('sectors')} type="button">Setores</button>
           </div>
-          {channels.map((channel) => (
+          <input
+            className="messenger-search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Buscar conversa, setor ou grupo"
+          />
+          {visibleChannels.map((channel) => (
             <div className={selectedId === channel.id ? 'contact-row is-active' : 'contact-row'} key={channel.id}>
               <button className="channel-row" onClick={() => selectChannel(channel.id)} type="button">
                 <PixelAvatar avatar={channel.avatar} size={38} animated />
@@ -160,7 +177,10 @@ export default function TeamHub({
               {emojis.map((emoji) => <button key={emoji} type="button" onClick={() => setMessage((current) => `${current}${emoji}`)}>{emoji}</button>)}
             </div>
             <input value={message} maxLength="500" onChange={(event) => setMessage(event.target.value)} placeholder="Escreva uma mensagem, update ou convite..." />
-            <button className="button button--primary" type="submit">Enviar</button>
+            <div className="compose-actions">
+              <button className="button button--ghost" type="button" onClick={() => sendCoffee(selected)}>☕ Brinde de café</button>
+              <button className="button button--primary" type="submit">Enviar</button>
+            </div>
           </form>
         </div>
       </section>

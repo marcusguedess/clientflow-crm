@@ -547,7 +547,7 @@ export default function App() {
             />
           )}
 
-          {activeView === 'clients' && <ClientsPage leads={leads} employees={employees} onEdit={openEditLead} />}
+          {activeView === 'clients' && <ClientsPage leads={leads} employees={employees} tasks={tasks} activities={seedActivities} onEdit={openEditLead} />}
 
           {activeView === 'activities' && <ActivitiesPage activities={seedActivities} tasks={tasks} />}
 

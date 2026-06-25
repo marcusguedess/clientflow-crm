@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { formatCurrency } from '../utils/formatCurrency'
 import PixelAvatar from './PixelAvatar'
 import StatusBadge from './StatusBadge'
@@ -7,10 +7,16 @@ function findEmployeeByName(employees, name) {
   return employees.find((employee) => employee.nome === name) || employees[0]
 }
 
-export default function ClientsPage({ leads, employees = [], onEdit }) {
+export default function ClientsPage({ leads, employees = [], tasks = [], activities = [], onEdit }) {
   const clients = leads.filter((lead) => lead.status === 'Fechado')
   const [selected, setSelected] = useState(clients[0] || null)
   const selectedOwner = selected ? findEmployeeByName(employees, selected.responsavel) : null
+  const selectedContextKey = [selected?.empresa, selected?.nome, selected?.responsavel].filter(Boolean).join(' ').toLowerCase()
+  const relatedTasks = useMemo(() => tasks.filter((task) => task.owner === selected?.responsavel).slice(0, 3), [tasks, selected?.responsavel])
+  const selectedActivities = useMemo(() => activities.filter((activity) => {
+    const text = `${activity.title || ''} ${activity.detail || ''}`.toLowerCase()
+    return selectedContextKey && text.includes(selectedContextKey.split(' ')[0])
+  }).slice(0, 3), [activities, selectedContextKey])
 
   return (
     <section className="clients-page">
@@ -41,6 +47,34 @@ export default function ClientsPage({ leads, employees = [], onEdit }) {
               <div><small>Origem</small><strong>{selected.origem}</strong></div>
             </div>
             <div className="client-detail__notes sensitive-data"><span className="eyebrow">Contexto da conta</span><p>{selected.notas}</p></div>
+            <div className="client-detail__columns">
+              <div>
+                <span className="eyebrow">Próximas ações</span>
+                {relatedTasks.length ? (
+                  relatedTasks.map((task) => (
+                    <div className="client-mini-row" key={task.id}>
+                      <strong>{task.title}</strong>
+                      <small>{task.status} · {task.owner || 'Sem responsável'}</small>
+                    </div>
+                  ))
+                ) : (
+                  <div className="client-mini-row"><strong>Sem ações vinculadas</strong><small>Conecte tarefas deste responsável ao cliente.</small></div>
+                )}
+              </div>
+              <div>
+                <span className="eyebrow">Histórico</span>
+                {selectedActivities.length ? (
+                  selectedActivities.map((activity, index) => (
+                    <div className="client-mini-row" key={`${activity.id || activity.title}-${index}`}>
+                      <strong>{activity.title || 'Movimentação'}</strong>
+                      <small>{activity.detail || activity.description || 'Registro recente'}</small>
+                    </div>
+                  ))
+                ) : (
+                  <div className="client-mini-row"><strong>Sem histórico visível</strong><small>As últimas interações aparecerão aqui.</small></div>
+                )}
+              </div>
+            </div>
             <div className="client-health"><span>Saúde do relacionamento</span><div><i style={{ width: '82%' }} /></div><strong>82%</strong></div>
             <button className="button button--primary" onClick={() => onEdit(selected)}>Atualizar cliente</button>
           </article>
