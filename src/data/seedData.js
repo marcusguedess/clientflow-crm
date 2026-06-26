@@ -1,3 +1,6 @@
+// Dados demonstrativos fictícios usados para popular a experiência inicial.
+// Não representam clientes, contatos ou oportunidades reais.
+
 export const PIPELINE_STATUSES = [
   'Novo Lead',
   'Contato Feito',

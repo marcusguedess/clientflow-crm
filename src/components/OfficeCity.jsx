@@ -87,21 +87,23 @@ export default function OfficeCity({ employees, onSelectEmployee, onCityEvent, o
           <div><span className="eyebrow">Fluxora HQ</span><h2>Escritório central</h2><p>Mesas, café, lounge e estações de trabalho da equipe.</p></div>
           <button className="button button--ghost" onClick={() => setInsideOffice(false)}>← Voltar à cidade</button>
         </div>
-        <div className="office-interior">
-          <div className="office-wall-sign">CLIENTFLOW HQ</div>
-          <button className="office-coffee" onClick={() => interact('Café do escritório', 'Você preparou um espresso e recuperou a energia da tarde.', 'shop')} type="button"><span>CAFÉ</span><i>☕</i></button>
-          <div className="office-lounge"><span>LOUNGE</span><i /><i /><b>🪴</b></div>
-          <div className="office-meeting"><span>SALA DE REUNIÃO</span><i /><i /><i /><i /></div>
-          {employees.map((employee, index) => (
-            <button className={`office-desk office-desk--${index + 1} character-action--${actions[employee.id] || 'idle'}`} key={employee.id} onClick={() => onSelectEmployee(employee)}>
-              <span className="desk-screen"><i /></span>
-              <span className="desk-chair" />
-              <PixelAvatar avatar={employee.avatar} size={46} animated />
-              <small>{employee.nome.split(' ')[0]}</small>
-            </button>
-          ))}
-          <button className="office-seat office-seat--meeting" onClick={() => interact('Mesa de reunião', 'Você se sentou para revisar o pipeline com a equipe.')} type="button">Sentar</button>
-          <button className="office-seat office-seat--lounge" onClick={() => interact('Pausa no lounge', 'Poltrona confortável, plantas e cinco minutos longe das notificações.')} type="button">Descansar</button>
+        <div className="city-canvas-scroll" aria-label="Área navegável do escritório">
+          <div className="office-interior">
+            <div className="office-wall-sign">CLIENTFLOW HQ</div>
+            <button className="office-coffee" onClick={() => interact('Café do escritório', 'Você preparou um espresso e recuperou a energia da tarde.', 'shop')} type="button"><span>CAFÉ</span><i>☕</i></button>
+            <div className="office-lounge"><span>LOUNGE</span><i /><i /><b>🪴</b></div>
+            <div className="office-meeting"><span>SALA DE REUNIÃO</span><i /><i /><i /><i /></div>
+            {employees.map((employee, index) => (
+              <button className={`office-desk office-desk--${index + 1} character-action--${actions[employee.id] || 'idle'}`} key={employee.id} onClick={() => onSelectEmployee(employee)}>
+                <span className="desk-screen"><i /></span>
+                <span className="desk-chair" />
+                <PixelAvatar avatar={employee.avatar} size={46} animated />
+                <small>{employee.nome.split(' ')[0]}</small>
+              </button>
+            ))}
+            <button className="office-seat office-seat--meeting" onClick={() => interact('Mesa de reunião', 'Você se sentou para revisar o pipeline com a equipe.')} type="button">Sentar</button>
+            <button className="office-seat office-seat--lounge" onClick={() => interact('Pausa no lounge', 'Poltrona confortável, plantas e cinco minutos longe das notificações.')} type="button">Descansar</button>
+          </div>
         </div>
         {dialogModal}
       </section>
@@ -134,7 +136,8 @@ export default function OfficeCity({ employees, onSelectEmployee, onCityEvent, o
         <span className="city-keyboard-hint">WASD / setas</span>
       </div>
 
-      <div className="pixel-city" aria-label="Cidade virtual da equipe">
+      <div className="city-canvas-scroll" aria-label="Área navegável da cidade">
+        <div className="pixel-city" aria-label="Cidade virtual da equipe">
         <div className="city-road city-road--horizontal" />
         <div className="city-road city-road--vertical" />
         <div className="city-building city-building--sales">
@@ -188,22 +191,23 @@ export default function OfficeCity({ employees, onSelectEmployee, onCityEvent, o
         <button className="city-door city-door--success" onClick={() => interact('Sucesso do cliente', 'Uma sala tranquila com mapas de jornada e histórias de clientes.')} type="button">Entrar</button>
         <button className="city-door city-door--marketing" onClick={() => interact('Estúdio de marketing', 'Luzes, câmera, post-its e uma campanha sendo finalizada.')} type="button">Entrar</button>
 
-        {employees.map((employee) => (
-          <button
-            className={`city-character ${activeEmployeeId === employee.id ? 'is-active' : ''} character-action--${actions[employee.id] || 'idle'}`}
-            key={employee.id}
-            style={positions[employee.id] || locations[employee.id]}
-            onClick={() => onSelectEmployee(employee)}
-            type="button"
-          >
-            <span className="city-character__badge">
-              <strong>{employee.nome.split(' ')[0]}</strong>
-              <small>{employee.setor}</small>
-            </span>
-            <PixelAvatar avatar={employee.avatar} size={55} animated />
-            <span className={`city-character__presence presence-dot--${employee.status}`} />
-          </button>
-        ))}
+          {employees.map((employee) => (
+            <button
+              className={`city-character ${activeEmployeeId === employee.id ? 'is-active' : ''} character-action--${actions[employee.id] || 'idle'}`}
+              key={employee.id}
+              style={positions[employee.id] || locations[employee.id]}
+              onClick={() => onSelectEmployee(employee)}
+              type="button"
+            >
+              <span className="city-character__badge">
+                <strong>{employee.nome.split(' ')[0]}</strong>
+                <small>{employee.setor}</small>
+              </span>
+              <PixelAvatar avatar={employee.avatar} size={55} animated />
+              <span className={`city-character__presence presence-dot--${employee.status}`} />
+            </button>
+          ))}
+        </div>
       </div>
       {dialogModal}
     </section>

@@ -1,8 +1,21 @@
 {
   "name": "clientflow-crm",
   "private": true,
+  "description": "CRM local-first em desenvolvimento ativo para gestão de leads, pipeline comercial e colaboração visual.",
   "version": "0.3.0",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marcusguedess/clientflow-crm.git"
+  },
+  "keywords": [
+    "crm",
+    "react",
+    "vite",
+    "local-first",
+    "pipeline",
+    "dashboard"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",

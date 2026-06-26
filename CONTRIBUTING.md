@@ -28,7 +28,7 @@ npm audit
 ## Padrões
 
 - Use JavaScript e componentes React organizados.
-- Preserve a compatibilidade com GitHub Pages.
+- Preserve a compatibilidade com publicação estática via Vite.
 - Renderize textos com JSX; não use HTML arbitrário.
 - Valide qualquer dado lido do navegador ou importado por arquivo.
 - Mantenha acessibilidade por teclado e layout responsivo.
@@ -49,4 +49,4 @@ security: valida estrutura do backup
 
 O projeto é local-first e não possui autenticação real. Não implemente permissões somente no frontend como se fossem controles de segurança. Recursos multiusuário exigem backend com autorização no servidor.
 
-Leia também [security_best_practices_report.md](security_best_practices_report.md).
+Leia também [SECURITY.md](SECURITY.md).

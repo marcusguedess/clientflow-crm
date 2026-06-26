@@ -1,3 +1,5 @@
+// Dados demonstrativos fictícios usados para simular uma equipe comercial local.
+
 export const avatarOptions = {
   skin: ['#f2c7a5', '#d99b72', '#a96848', '#70422f'],
   hair: ['#34251f', '#70442d', '#c98b3d', '#252b3a', '#a84b3f'],

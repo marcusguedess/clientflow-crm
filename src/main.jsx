@@ -8,6 +8,7 @@ import './styles/three-showcase.css'
 import './styles/performance-dashboard.css'
 import './styles/control-surfaces.css'
 import './styles/personalization.css'
+import './styles/visual-audit.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

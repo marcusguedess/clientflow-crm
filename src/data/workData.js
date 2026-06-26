@@ -1,3 +1,5 @@
+// Dados demonstrativos fictícios usados para simular tarefas e atividades locais.
+
 export const TASK_STATUSES = ['Planejado', 'Em andamento', 'Em revisão', 'Concluído']
 
 export const seedTasks = [

@@ -77,6 +77,7 @@ export default function App() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
+  const [isUtilityDockOpen, setIsUtilityDockOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deletedLead, setDeletedLead] = useState(null)
   const [toast, setToast] = useState(null)
@@ -608,24 +609,45 @@ export default function App() {
         onOpenEmployee={setProfileEmployee}
       />
 
-      <FloatingChat employees={employees} onOpenMessenger={() => setActiveView('messenger')} />
-      <ThemeStudio
-        theme={theme}
-        onChange={(nextTheme) => { playSound('click', soundEnabled); setTheme(nextTheme) }}
-        visualMode={visualMode}
-        onVisualModeChange={setVisualMode}
-        density={density}
-        onDensityChange={setDensity}
-        soundEnabled={soundEnabled}
-        onToggleSound={() => setSoundEnabled((current) => !current)}
-      />
-      <button
-        className={`privacy-toggle ${privacyMode ? 'is-active' : ''}`}
-        onClick={() => setPrivacyMode((current) => !current)}
-        title="Ocultar ou exibir dados sensíveis"
-      >
-        {privacyMode ? '◉ Dados ocultos' : '◌ Modo apresentação'}
-      </button>
+      <div className={`utility-dock ${isUtilityDockOpen ? 'is-open' : ''}`}>
+        <div
+          className="utility-dock__tools"
+          aria-hidden={!isUtilityDockOpen}
+          inert={!isUtilityDockOpen}
+        >
+          <button
+            className={`privacy-toggle ${privacyMode ? 'is-active' : ''}`}
+            onClick={() => setPrivacyMode((current) => !current)}
+            title="Ocultar ou exibir dados sensíveis"
+            tabIndex={isUtilityDockOpen ? 0 : -1}
+          >
+            {privacyMode ? '◉ Dados ocultos' : '◌ Modo apresentação'}
+          </button>
+          <ThemeStudio
+            theme={theme}
+            onChange={(nextTheme) => { playSound('click', soundEnabled); setTheme(nextTheme) }}
+            visualMode={visualMode}
+            onVisualModeChange={setVisualMode}
+            density={density}
+            onDensityChange={setDensity}
+            soundEnabled={soundEnabled}
+            onToggleSound={() => setSoundEnabled((current) => !current)}
+          />
+          <FloatingChat employees={employees} onOpenMessenger={() => setActiveView('messenger')} />
+        </div>
+        <button
+          className="utility-dock__toggle"
+          type="button"
+          onClick={() => setIsUtilityDockOpen((current) => !current)}
+          aria-expanded={isUtilityDockOpen}
+          aria-label={isUtilityDockOpen ? 'Fechar ferramentas rápidas' : 'Abrir ferramentas rápidas'}
+          title="Ferramentas rápidas"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M8 14v6" />
+          </svg>
+        </button>
+      </div>
       <Toast toast={toast} onUndo={undoDelete} onClose={() => setToast(null)} />
     </div>
   )
