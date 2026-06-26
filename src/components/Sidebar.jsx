@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import Logo from './Logo'
 import PixelAvatar from './PixelAvatar'
 import { navigationGroups } from '../app/navigation'
@@ -84,12 +85,44 @@ const icons = {
 }
 
 export default function Sidebar({ activeView, onViewChange, isOpen, onClose, currentEmployee, onProfile }) {
+  const [isCompactViewport, setIsCompactViewport] = useState(false)
+  const closeButtonRef = useRef(null)
+  const shouldHideSidebar = isCompactViewport && !isOpen
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 1180px)')
+    const syncViewport = () => setIsCompactViewport(media.matches)
+
+    syncViewport()
+    media.addEventListener('change', syncViewport)
+
+    return () => media.removeEventListener('change', syncViewport)
+  }, [])
+
+  useEffect(() => {
+    if (!isCompactViewport || !isOpen) return undefined
+
+    closeButtonRef.current?.focus()
+
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') onClose()
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isCompactViewport, isOpen, onClose])
+
   return (
     <>
-      <aside className={`sidebar ${isOpen ? 'sidebar--open' : ''}`}>
+      <aside
+        className={`sidebar ${isOpen ? 'sidebar--open' : ''}`}
+        aria-hidden={shouldHideSidebar}
+        inert={shouldHideSidebar}
+      >
         <div className="sidebar__top">
           <Logo />
-          <button className="icon-button sidebar__close" onClick={onClose} aria-label="Fechar menu">
+          <button ref={closeButtonRef} className="icon-button sidebar__close" type="button" onClick={onClose} aria-label="Fechar menu">
             ×
           </button>
         </div>
@@ -102,6 +135,7 @@ export default function Sidebar({ activeView, onViewChange, isOpen, onClose, cur
                 <button
                   key={item.id}
                   className={`sidebar__link ${group.id === 'world' ? 'sidebar__link--fluxora' : ''} ${activeView === item.id ? 'is-active' : ''}`}
+                  type="button"
                   onClick={() => {
                     onViewChange(item.id)
                     onClose()
@@ -116,7 +150,14 @@ export default function Sidebar({ activeView, onViewChange, isOpen, onClose, cur
         </nav>
 
         <div className="sidebar__footer">
-          <button className="sidebar__profile" onClick={() => onProfile(currentEmployee)}>
+          <button
+            className="sidebar__profile"
+            type="button"
+            onClick={() => {
+              onProfile(currentEmployee)
+              onClose()
+            }}
+          >
             <PixelAvatar avatar={currentEmployee.avatar} size={38} animated />
             <span>
               <strong>{currentEmployee.nome}</strong>
@@ -125,7 +166,7 @@ export default function Sidebar({ activeView, onViewChange, isOpen, onClose, cur
           </button>
         </div>
       </aside>
-      {isOpen && <button className="sidebar-overlay" onClick={onClose} aria-label="Fechar menu" />}
+      {isOpen && <button className="sidebar-overlay" type="button" onClick={onClose} aria-label="Fechar menu" />}
     </>
   )
 }

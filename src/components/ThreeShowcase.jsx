@@ -251,16 +251,29 @@ export default function ThreeShowcase({ statusHealth, employees }) {
         <p>{selectedLabel}. Clique em modos, torres ou avatares para alterar a leitura do painel.</p>
       </div>
       <div className={`three-showcase__toolbar ${controlsOpen ? 'is-open' : 'is-closed'}`}>
-        <button className="three-showcase__toggle" type="button" onClick={() => setControlsOpen((current) => !current)}>
+        <button
+          className="three-showcase__toggle"
+          type="button"
+          onClick={() => setControlsOpen((current) => !current)}
+          aria-expanded={controlsOpen}
+          aria-controls="three-showcase-controls"
+        >
           {controlsOpen ? 'Fechar controle visual' : 'Abrir controle visual'}
         </button>
         {controlsOpen && (
-          <div className="three-showcase__controls" role="tablist" aria-label="Modos do holograma">
+          <div id="three-showcase-controls" className="three-showcase__controls" role="tablist" aria-label="Modos do holograma">
             <button className="three-showcase__controls-close" type="button" onClick={() => setControlsOpen(false)} aria-label="Fechar painel de controle">
               ×
             </button>
             {modes.map((item) => (
-              <button key={item.id} className={mode === item.id ? 'is-active' : ''} onClick={() => { setMode(item.id); setSelectedLabel(item.label) }} type="button">
+              <button
+                key={item.id}
+                className={mode === item.id ? 'is-active' : ''}
+                onClick={() => { setMode(item.id); setSelectedLabel(item.label) }}
+                type="button"
+                role="tab"
+                aria-selected={mode === item.id}
+              >
                 {item.label}
               </button>
             ))}

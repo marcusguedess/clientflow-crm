@@ -68,7 +68,20 @@ export default function AnalyticsHub({ leads, employees }) {
     <section className="analytics-hub">
       <div className="analytics-hero">
         <div><span className="eyebrow">Central de relatórios</span><h2>Decisões com contexto</h2><p>Uma visão direta sobre aquisição, receita, clientes e perdas.</p></div>
-        <div className="analytics-tabs">{tabs.map((item) => <button key={item.id} className={tab === item.id ? 'is-active' : ''} onClick={() => setTab(item.id)}>{item.label}</button>)}</div>
+        <div className="analytics-tabs" role="tablist" aria-label="Relatórios disponíveis">
+          {tabs.map((item) => (
+            <button
+              key={item.id}
+              className={tab === item.id ? 'is-active' : ''}
+              onClick={() => setTab(item.id)}
+              type="button"
+              role="tab"
+              aria-selected={tab === item.id}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="dashboard-filter-bar analytics-filter-bar">
@@ -117,7 +130,7 @@ export default function AnalyticsHub({ leads, employees }) {
           </div>
           <div className="analytics-layout">
             <article className="analytics-card analytics-card--wide"><header><span className="eyebrow">Diagnóstico</span><h3>Motivos de perda</h3></header><div className="loss-reasons">{reasons.map(([reason, value]) => <div key={reason}><span>{reason}</span><div><i style={{ width: `${value}%` }} /></div><strong>{value}%</strong></div>)}</div></article>
-            <article className="analytics-card loss-recovery"><header><span className="eyebrow">Recuperação</span><h3>Próximas retomadas</h3></header>{data.losses.length ? data.losses.map((lead) => <div key={lead.id}><strong>{lead.empresa}</strong><span>{lead.notas}</span><button>Planejar retomada</button></div>) : <p>Nenhuma perda registrada.</p>}</article>
+            <article className="analytics-card loss-recovery"><header><span className="eyebrow">Recuperação</span><h3>Próximas retomadas</h3></header>{data.losses.length ? data.losses.map((lead) => <div key={lead.id}><strong>{lead.empresa}</strong><span>{lead.notas}</span><button type="button">Planejar retomada</button></div>) : <p>Nenhuma perda registrada.</p>}</article>
           </div>
         </>
       )}

@@ -54,7 +54,7 @@ export default function LeadForm({ lead, employees = [], onSave, onClose }) {
             <span className="eyebrow">{lead ? 'Atualizar oportunidade' : 'Nova oportunidade'}</span>
             <h2 id="lead-form-title">{lead ? 'Editar lead' : 'Adicionar lead'}</h2>
           </div>
-          <button className="icon-button" onClick={onClose} aria-label="Fechar formulário">
+          <button className="icon-button" type="button" onClick={onClose} aria-label="Fechar formulário">
             ×
           </button>
         </div>

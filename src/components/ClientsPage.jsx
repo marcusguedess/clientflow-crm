@@ -26,7 +26,7 @@ export default function ClientsPage({ leads, employees = [], tasks = [], activit
       <div className="client-layout">
         <div className="client-list">
           {clients.map((client) => (
-            <button className={selected?.id === client.id ? 'client-list-card is-active' : 'client-list-card'} key={client.id} onClick={() => setSelected(client)}>
+            <button className={selected?.id === client.id ? 'client-list-card is-active' : 'client-list-card'} key={client.id} type="button" onClick={() => setSelected(client)}>
               <PixelAvatar avatar={findEmployeeByName(employees, client.responsavel).avatar} size={38} animated />
               <div><strong>{client.empresa}</strong><small>{client.nome}</small></div>
               <b>{formatCurrency(client.valorEstimado)}</b>
@@ -75,7 +75,7 @@ export default function ClientsPage({ leads, employees = [], tasks = [], activit
               </div>
             </div>
             <div className="client-health"><span>Saúde do relacionamento</span><div><i style={{ width: '82%' }} /></div><strong>82%</strong></div>
-            <button className="button button--primary" onClick={() => onEdit(selected)}>Atualizar cliente</button>
+            <button className="button button--primary" type="button" onClick={() => onEdit(selected)}>Atualizar cliente</button>
           </article>
         ) : <div className="empty-state"><strong>Nenhum cliente fechado</strong><span>Leads ganhos aparecerão nesta área.</span></div>}
       </div>

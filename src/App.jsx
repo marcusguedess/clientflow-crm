@@ -448,7 +448,7 @@ export default function App() {
                   status={statusFilter}
                   onStatusChange={setStatusFilter}
                 />
-                <button className="button button--text" onClick={resetDemo}>
+                <button className="button button--text" type="button" onClick={resetDemo}>
                   Restaurar carteira inicial
                 </button>
               </div>
@@ -572,10 +572,10 @@ export default function App() {
               permanentemente.
             </p>
             <div className="modal-footer">
-              <button className="button button--ghost" onClick={() => setDeleteTarget(null)}>
+              <button className="button button--ghost" type="button" onClick={() => setDeleteTarget(null)}>
                 Cancelar
               </button>
-              <button className="button button--danger" onClick={confirmDelete}>
+              <button className="button button--danger" type="button" onClick={confirmDelete}>
                 Excluir lead
               </button>
             </div>
@@ -617,6 +617,7 @@ export default function App() {
         >
           <button
             className={`privacy-toggle ${privacyMode ? 'is-active' : ''}`}
+            type="button"
             onClick={() => setPrivacyMode((current) => !current)}
             title="Ocultar ou exibir dados sensíveis"
             tabIndex={isUtilityDockOpen ? 0 : -1}

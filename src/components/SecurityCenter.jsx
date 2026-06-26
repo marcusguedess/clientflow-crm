@@ -37,7 +37,7 @@ export default function SecurityCenter({ onExport, onImport, privacyMode, onTogg
           <span className="security-card__number">00</span>
           <h3>Modo apresentação</h3>
           <p>Oculta emails, telefones e notas para reduzir exposição acidental durante reuniões e gravações.</p>
-          <button className={`button ${privacyMode ? 'button--respect' : 'button--primary'}`} onClick={onTogglePrivacy}>
+          <button className={`button ${privacyMode ? 'button--respect' : 'button--primary'}`} type="button" onClick={onTogglePrivacy}>
             {privacyMode ? 'Desativar ocultação' : 'Ativar modo apresentação'}
           </button>
         </article>
@@ -57,7 +57,8 @@ export default function SecurityCenter({ onExport, onImport, privacyMode, onTogg
           <h3>Backup criptografado</h3>
           <p>Gera um arquivo protegido com AES-GCM e chave derivada da senha. A senha nunca é armazenada.</p>
           <form onSubmit={exportData}>
-            <label><span>Senha do backup</span><input type="password" minLength="12" required value={exportPassword} onChange={(event) => setExportPassword(event.target.value)} autoComplete="new-password" /></label>
+            <input type="text" name="backup-context" value="clientflow-local-backup" autoComplete="username" readOnly hidden />
+            <label><span>Senha do backup</span><input name="export-password" type="password" minLength="12" required value={exportPassword} onChange={(event) => setExportPassword(event.target.value)} autoComplete="new-password" /></label>
             <button className="button button--primary" type="submit">Exportar backup</button>
           </form>
         </article>
@@ -68,7 +69,8 @@ export default function SecurityCenter({ onExport, onImport, privacyMode, onTogg
           <p>A importação aceita apenas arquivos .cfbackup com até 1 MB e valida os registros antes de persistir.</p>
           <form onSubmit={importData}>
             <label><span>Arquivo .cfbackup</span><input ref={fileRef} type="file" accept=".cfbackup,application/json" required onChange={(event) => setFile(event.target.files?.[0] || null)} /></label>
-            <label><span>Senha do backup</span><input type="password" minLength="12" required value={importPassword} onChange={(event) => setImportPassword(event.target.value)} autoComplete="current-password" /></label>
+            <input type="text" name="backup-context" value="clientflow-local-backup" autoComplete="username" readOnly hidden />
+            <label><span>Senha do backup</span><input name="import-password" type="password" minLength="12" required value={importPassword} onChange={(event) => setImportPassword(event.target.value)} autoComplete="current-password" /></label>
             <button className="button button--ghost" type="submit">Validar e restaurar</button>
           </form>
         </article>
@@ -86,7 +88,7 @@ export default function SecurityCenter({ onExport, onImport, privacyMode, onTogg
           <span className="security-card__number">04</span>
           <h3>Limpeza de emergência</h3>
           <p>Remove leads, mensagens, mural, perfis, tarefas e preferências ClientFlow deste navegador.</p>
-          <button className="button button--danger" onClick={onWipe}>Apagar todos os dados locais</button>
+          <button className="button button--danger" type="button" onClick={onWipe}>Apagar todos os dados locais</button>
         </article>
       </div>
     </section>

@@ -22,7 +22,7 @@ export default function EmployeeProfile({
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section className="profile-card" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
-        <button className="icon-button profile-card__close" onClick={onClose} aria-label="Fechar perfil">×</button>
+        <button className="icon-button profile-card__close" type="button" onClick={onClose} aria-label="Fechar perfil">×</button>
         <div className="profile-card__cover">
           <span className={`presence-dot presence-dot--${employee.status}`} />
           <PixelAvatar avatar={employee.avatar} size={112} animated />
@@ -39,12 +39,12 @@ export default function EmployeeProfile({
           </div>
           {!editable && (
             <div className="profile-actions">
-              <button className="button button--primary" onClick={() => onMessage?.(employee)}>Mensagem</button>
-              <button className="button button--ghost" onClick={() => onLike?.(employee.id)}>👍 Joinha</button>
-              <button className="button button--respect" disabled={!respectsLeft} onClick={() => onRespect?.(employee.id)}>
+              <button className="button button--primary" type="button" onClick={() => onMessage?.(employee)}>Mensagem</button>
+              <button className="button button--ghost" type="button" onClick={() => onLike?.(employee.id)}>👍 Joinha</button>
+              <button className="button button--respect" type="button" disabled={!respectsLeft} onClick={() => onRespect?.(employee.id)}>
                 ★ Respeito ({respectsLeft})
               </button>
-              <button className="button button--attention" onClick={() => onAttention?.(employee)}>🔔 Chamar atenção</button>
+              <button className="button button--attention" type="button" onClick={() => onAttention?.(employee)}>🔔 Chamar atenção</button>
             </div>
           )}
 

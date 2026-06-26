@@ -29,13 +29,14 @@ export default function LeadCard({ lead, owner, onEdit, onDelete, onStatusChange
           </div>
         </div>
         <div className="lead-card__actions">
-          <button onClick={() => onEdit(lead)} aria-label={`Editar ${lead.nome}`} title="Editar lead">
+          <button type="button" onClick={() => onEdit(lead)} aria-label={`Editar ${lead.nome}`} title="Editar lead">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="m14 5 5 5M4 20l3.5-.7L19 7.8a2 2 0 0 0-2.8-2.8L4.7 16.5 4 20Z" />
             </svg>
           </button>
           <button
             className="danger-action"
+            type="button"
             onClick={() => onDelete(lead)}
             aria-label={`Excluir ${lead.nome}`}
             title="Excluir lead"
