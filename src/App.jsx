@@ -25,6 +25,9 @@ import { viewCopy } from './app/navigation'
 import { seedLeads } from './data/seedData'
 import { seedEmployees, seedMessages, seedPosts } from './data/teamData'
 import { seedActivities, seedTasks } from './data/workData'
+import { buildCitySignals } from './domain/clientflowBridge'
+import { createDomainEvent, DOMAIN_EVENT_TYPES, eventToTimelineEvent } from './domain/events'
+import { analyzeDealRisk, DEFAULT_GOAL_CONFIG } from './domain/metrics'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import { usePersistentState } from './hooks/usePersistentState'
 import { calculateLeadStats } from './utils/leadStats'
@@ -54,6 +57,16 @@ export default function App() {
     value && typeof value === 'object' && !Array.isArray(value) ? value : {},
   )
   const [tasks, setTasks] = usePersistentState('clientflow-tasks-v1', seedTasks, sanitizeTasks)
+  const [domainEvents, setDomainEvents] = usePersistentState('clientflow-domain-events-v1', [], (value) =>
+    Array.isArray(value)
+      ? value.slice(0, 250).filter((event) => event?.id && event?.type && event?.at)
+      : [],
+  )
+  const [goalConfig, setGoalConfig] = usePersistentState('clientflow-goal-config-v1', DEFAULT_GOAL_CONFIG, (value) => ({
+    ...DEFAULT_GOAL_CONFIG,
+    ...(value && typeof value === 'object' ? value : {}),
+    periodGoal: Number(value?.periodGoal || DEFAULT_GOAL_CONFIG.periodGoal),
+  }))
   const [timelineNotes, setTimelineNotes] = usePersistentState('clientflow-timeline-notes-v1', [], (value) =>
     Array.isArray(value)
       ? value.slice(0, 500).map((note) => ({
@@ -96,7 +109,14 @@ export default function App() {
   const [soundEnabled, setSoundEnabled] = usePersistentState('clientflow-sound-v1', true, (value) => value !== false)
   const actionLogRef = useRef({})
   const currentEmployee = employees[0]
-  const timelineActivities = useMemo(() => [...timelineNotes, ...seedActivities], [timelineNotes])
+  const timelineActivities = useMemo(() =>
+    [
+      ...domainEvents.map(eventToTimelineEvent),
+      ...timelineNotes,
+      ...seedActivities,
+    ].sort((a, b) => new Date(b.at) - new Date(a.at)),
+  [domainEvents, timelineNotes])
+  const citySignals = useMemo(() => buildCitySignals(domainEvents), [domainEvents])
 
   useEffect(() => {
     if (respectState.date !== new Date().toISOString().slice(0, 10)) {
@@ -154,6 +174,21 @@ export default function App() {
     return true
   }
 
+  function emitDomainEvent(type, payload = {}) {
+    const event = createDomainEvent(type, payload, currentEmployee?.nome || 'system')
+    setDomainEvents((current) => [event, ...current].slice(0, 250))
+    return event
+  }
+
+  function handleCityEvent(message, payload = {}) {
+    setToast({ message })
+    emitDomainEvent(DOMAIN_EVENT_TYPES.CITY_INTERACTION, {
+      title: payload.title || 'Interação na cidade',
+      detail: payload.detail || message,
+      district: payload.district,
+    })
+  }
+
   const stats = useMemo(() => calculateLeadStats(leads), [leads])
 
   const filteredLeads = useMemo(() => {
@@ -200,8 +235,53 @@ export default function App() {
             : lead,
         ),
       )
+      emitDomainEvent(DOMAIN_EVENT_TYPES.DEAL_UPDATED, {
+        dealId: safeLeadData.id,
+        company: safeLeadData.empresa,
+        contactName: safeLeadData.nome,
+        owner: safeLeadData.responsavel,
+        detail: `${safeLeadData.empresa} atualizada em ${safeLeadData.status}.`,
+      })
+      if (editingLead.status !== safeLeadData.status) {
+        emitDomainEvent(DOMAIN_EVENT_TYPES.DEAL_STAGE_CHANGED, {
+          dealId: safeLeadData.id,
+          company: safeLeadData.empresa,
+          contactName: safeLeadData.nome,
+          owner: safeLeadData.responsavel,
+          from: editingLead.status,
+          to: safeLeadData.status,
+          risk: analyzeDealRisk(safeLeadData, tasks),
+          detail: `${editingLead.status} → ${safeLeadData.status}`,
+        })
+      }
     } else {
       setLeads((current) => [safeLeadData, ...current])
+      emitDomainEvent(DOMAIN_EVENT_TYPES.DEAL_CREATED, {
+        dealId: safeLeadData.id,
+        company: safeLeadData.empresa,
+        contactName: safeLeadData.nome,
+        owner: safeLeadData.responsavel,
+        detail: `${safeLeadData.empresa} entrou no pipeline.`,
+      })
+    }
+    const statusChanged = !editingLead || editingLead.status !== safeLeadData.status
+    if (statusChanged && safeLeadData.status === 'Fechado') {
+      emitDomainEvent(DOMAIN_EVENT_TYPES.DEAL_WON, {
+        dealId: safeLeadData.id,
+        company: safeLeadData.empresa,
+        contactName: safeLeadData.nome,
+        owner: safeLeadData.responsavel,
+        value: Number(safeLeadData.valorEstimado || 0),
+      })
+    }
+    if (statusChanged && safeLeadData.status === 'Perdido') {
+      emitDomainEvent(DOMAIN_EVENT_TYPES.DEAL_LOST, {
+        dealId: safeLeadData.id,
+        company: safeLeadData.empresa,
+        contactName: safeLeadData.nome,
+        owner: safeLeadData.responsavel,
+        reason: safeLeadData.motivoPerda || 'Sem motivo registrado',
+      })
     }
     setToast({ message: editingLead ? 'Lead atualizado com segurança.' : 'Novo lead criado.' })
     setIsFormOpen(false)
@@ -209,7 +289,39 @@ export default function App() {
   }
 
   function changeLeadStatus(id, status) {
+    const currentLead = leads.find((lead) => lead.id === id)
+    const nextLead = currentLead ? { ...currentLead, status } : null
     setLeads((current) => current.map((lead) => (lead.id === id ? { ...lead, status } : lead)))
+    if (nextLead && currentLead.status !== status) {
+      emitDomainEvent(DOMAIN_EVENT_TYPES.DEAL_STAGE_CHANGED, {
+        dealId: id,
+        company: nextLead.empresa,
+        contactName: nextLead.nome,
+        owner: nextLead.responsavel,
+        from: currentLead.status,
+        to: status,
+        risk: analyzeDealRisk(nextLead, tasks),
+        detail: `${currentLead.status} → ${status}`,
+      })
+      if (status === 'Fechado') {
+        emitDomainEvent(DOMAIN_EVENT_TYPES.DEAL_WON, {
+          dealId: id,
+          company: nextLead.empresa,
+          contactName: nextLead.nome,
+          owner: nextLead.responsavel,
+          value: Number(nextLead.valorEstimado || 0),
+        })
+      }
+      if (status === 'Perdido') {
+        emitDomainEvent(DOMAIN_EVENT_TYPES.DEAL_LOST, {
+          dealId: id,
+          company: nextLead.empresa,
+          contactName: nextLead.nome,
+          owner: nextLead.responsavel,
+          reason: nextLead.motivoPerda || 'Sem motivo registrado',
+        })
+      }
+    }
     setToast({ message: `Lead movido para ${status}.` })
   }
 
@@ -261,6 +373,10 @@ export default function App() {
       ...current,
       [threadId]: [...(current[threadId] || []), newMessage].slice(-100),
     }))
+    emitDomainEvent(DOMAIN_EVENT_TYPES.MESSAGE_SENT, {
+      threadId,
+      detail: `Mensagem enviada por ${currentEmployee.nome}.`,
+    })
   }
 
   function addPost(text) {
@@ -308,13 +424,22 @@ export default function App() {
   }
 
   function createTask(task) {
-    setTasks((current) => [{ ...task, id: globalThis.crypto.randomUUID() }, ...current])
+    const nextTask = { ...task, id: globalThis.crypto.randomUUID() }
+    setTasks((current) => [nextTask, ...current])
+    emitDomainEvent(DOMAIN_EVENT_TYPES.TASK_CREATED, {
+      taskId: nextTask.id,
+      dealId: nextTask.relatedLeadId,
+      title: nextTask.title,
+      owner: nextTask.owner,
+      detail: `${nextTask.title} · ${nextTask.owner}`,
+    })
     setToast({ message: 'Tarefa criada no Flowboard.' })
+    return nextTask
   }
 
   function createCommunicationFollowUp(lead, source) {
     const dueDate = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)
-    createTask({
+    const task = createTask({
       title: `Follow-up ${lead.empresa}`,
       description: `Retomar contexto iniciado no ${source} com ${lead.nome}.`,
       status: 'Planejado',
@@ -324,10 +449,31 @@ export default function App() {
       sticker: source === 'chat' ? '💬' : '✉️',
       relatedLeadId: lead.id,
     })
+    emitDomainEvent(DOMAIN_EVENT_TYPES.FOLLOW_UP_SCHEDULED, {
+      taskId: task.id,
+      dealId: lead.id,
+      company: lead.empresa,
+      contactName: lead.nome,
+      owner: lead.responsavel || currentEmployee.nome,
+      title: task.title,
+      detail: `Follow-up criado a partir do ${source}.`,
+    })
   }
 
   function moveTask(id, status) {
+    const task = tasks.find((item) => item.id === id)
     setTasks((current) => current.map((task) => task.id === id ? { ...task, status } : task))
+    if (task) {
+      emitDomainEvent(status === 'Concluído' ? DOMAIN_EVENT_TYPES.TASK_COMPLETED : DOMAIN_EVENT_TYPES.TASK_UPDATED, {
+        taskId: id,
+        dealId: task.relatedLeadId,
+        title: task.title,
+        owner: task.owner,
+        from: task.status,
+        to: status,
+        detail: `${task.title} → ${status}`,
+      })
+    }
     setToast({ message: `Tarefa movida para ${status}.` })
   }
 
@@ -350,6 +496,12 @@ export default function App() {
       at: new Date().toISOString(),
       dealId,
     }, ...current].slice(0, 500))
+    emitDomainEvent(DOMAIN_EVENT_TYPES.NOTE_CREATED, {
+      dealId,
+      company,
+      owner: currentEmployee.nome,
+      detail: cleanText(text, 500),
+    })
     setToast({ message: 'Nota adicionada à timeline.' })
   }
 
@@ -365,6 +517,8 @@ export default function App() {
         socialStats,
         tasks,
         timelineNotes,
+        domainEvents,
+        goalConfig,
       }, password)
       const blob = new Blob([content], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
@@ -392,6 +546,8 @@ export default function App() {
       if (data.socialStats && typeof data.socialStats === 'object') setSocialStats(data.socialStats)
       setTasks(sanitizeTasks(data.tasks, seedTasks))
       if (Array.isArray(data.timelineNotes)) setTimelineNotes(data.timelineNotes)
+      if (Array.isArray(data.domainEvents)) setDomainEvents(data.domainEvents)
+      if (data.goalConfig && typeof data.goalConfig === 'object') setGoalConfig({ ...DEFAULT_GOAL_CONFIG, ...data.goalConfig })
       setToast({ message: 'Backup validado e restaurado.' })
     } catch {
       setToast({ message: 'Backup inválido ou senha incorreta.', tone: 'warning' })
@@ -432,12 +588,14 @@ export default function App() {
               tasks={tasks}
               employees={employees}
               currentEmployee={currentEmployee}
+              goalConfig={goalConfig}
               onNavigate={setActiveView}
               onEditLead={openEditLead}
+              onCompleteTask={(taskId) => moveTask(taskId, 'Concluído')}
             />
           )}
 
-          {activeView === 'performance' && <PerformanceDashboard leads={leads} employees={employees} tasks={tasks} onNavigate={setActiveView} />}
+          {activeView === 'performance' && <PerformanceDashboard leads={leads} employees={employees} tasks={tasks} goalConfig={goalConfig} onGoalConfigChange={setGoalConfig} onNavigate={setActiveView} />}
 
           {activeView === 'pipeline' && (
             <section className="pipeline-section">
@@ -455,6 +613,7 @@ export default function App() {
               <PipelineBoard
                 leads={filteredLeads}
                 employees={employees}
+                tasks={tasks}
                 onEdit={openEditLead}
                 onDelete={setDeleteTarget}
                 onStatusChange={changeLeadStatus}
@@ -517,7 +676,12 @@ export default function App() {
             <OfficeCity
               employees={employees}
               onSelectEmployee={setProfileEmployee}
-              onCityEvent={(message) => setToast({ message })}
+              onCityEvent={handleCityEvent}
+              currentEmployee={currentEmployee}
+              citySignals={citySignals}
+              onOpenPipeline={() => setActiveView('pipeline')}
+              onOpenMessenger={() => setActiveView('messenger')}
+              onCreateTask={(task) => createTask({ owner: currentEmployee.nome, priority: 'Média', sticker: '📌', ...task })}
               onSound={(name) => playSound(name, soundEnabled)}
             />
           )}
@@ -540,7 +704,7 @@ export default function App() {
             <TaskBoard tasks={tasks} employees={employees} leads={leads} onCreate={createTask} onMove={moveTask} onDelete={deleteTask} />
           )}
 
-          {activeView === 'analytics' && <AnalyticsHub leads={leads} employees={employees} />}
+          {activeView === 'analytics' && <AnalyticsHub leads={leads} employees={employees} tasks={tasks} />}
         </div>
       </main>
 
