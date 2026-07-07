@@ -136,6 +136,9 @@ export function sanitizeTasks(value, fallback = []) {
     dueDate: /^\d{4}-\d{2}-\d{2}$/.test(task?.dueDate) ? task.dueDate : '',
     sticker: cleanText(task?.sticker, 8) || '📌',
     relatedLeadId: cleanText(task?.relatedLeadId, 80),
+    accountId: cleanText(task?.accountId, 80),
+    contactId: cleanText(task?.contactId, 80),
+    dealId: cleanText(task?.dealId, 80),
   })).filter((task) => task.title)
   const isDemoBoard = tasks.every((task) => /^task-\d+$/.test(task.id))
   return isDemoBoard

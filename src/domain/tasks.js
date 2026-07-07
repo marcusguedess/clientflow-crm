@@ -9,6 +9,9 @@ export const DEFAULT_TASK = {
   dueDate: '',
   sticker: '📌',
   relatedLeadId: '',
+  accountId: '',
+  contactId: '',
+  dealId: '',
 }
 
 const TASK_STATUSES = new Set(['Planejado', 'Em andamento', 'Em revisão', 'Concluído'])
@@ -35,5 +38,8 @@ export function normalizeTask(input = {}, defaults = {}) {
     dueDate: /^\d{4}-\d{2}-\d{2}$/.test(merged.dueDate) ? merged.dueDate : '',
     sticker: cleanText(merged.sticker, 8) || DEFAULT_TASK.sticker,
     relatedLeadId: cleanText(merged.relatedLeadId, 80),
+    accountId: cleanText(merged.accountId, 80),
+    contactId: cleanText(merged.contactId, 80),
+    dealId: cleanText(merged.dealId, 80),
   }
 }

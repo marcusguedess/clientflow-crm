@@ -8,7 +8,171 @@ function chooseTopValue(items) {
   return [...items].sort((a, b) => Number(b.valorEstimado || 0) - Number(a.valorEstimado || 0))[0] || null
 }
 
-export function buildCommercialModel(leads, tasks = [], activities = [], employees = []) {
+function buildModelFromCrmEntities(leads, tasks = [], activities = [], employees = [], crmData) {
+  const leadById = new Map(leads.map((lead) => [lead.id, lead]))
+  const accountById = new Map((crmData.accounts || []).map((account) => [account.id, account]))
+  const contactById = new Map((crmData.contacts || []).map((contact) => [contact.id, contact]))
+
+  const deals = (crmData.deals || []).map((deal) => {
+    const account = accountById.get(deal.accountId)
+    const contact = contactById.get(deal.primaryContactId) || contactById.get(deal.contactIds?.[0])
+    return {
+      id: deal.id,
+      sourceLeadId: deal.sourceLeadId,
+      accountId: deal.accountId,
+      contactId: contact?.id || deal.primaryContactId || '',
+      title: deal.title,
+      contactName: contact?.name || '',
+      company: account?.name || deal.title,
+      owner: deal.owner,
+      ownerAvatar: employees.find((employee) => employee.nome === deal.owner)?.avatar,
+      email: contact?.email || '',
+      phone: contact?.phone || '',
+      stage: deal.stage,
+      value: Number(deal.value || 0),
+      forecast: Math.round(Number(deal.value || 0) * (Number(deal.probability || 0) / 100)),
+      probability: Number(deal.probability || 0),
+      segment: account?.segment || 'PME',
+      closeDate: deal.expectedCloseDate || '',
+      nextStep: deal.nextStep || '',
+      notes: leadById.get(deal.sourceLeadId)?.notas || '',
+      lossReason: deal.lossReason || '',
+      createdAt: normalizeDate(deal.createdAt) || new Date().toISOString(),
+      lastContactAt: deal.lastContactAt || deal.createdAt,
+      contactIds: deal.contactIds || [],
+    }
+  }).sort((a, b) => b.value - a.value)
+
+  const accounts = (crmData.accounts || []).map((account) => {
+    const accountDeals = deals.filter((deal) => deal.accountId === account.id)
+    const accountContacts = (crmData.contacts || [])
+      .filter((contact) => contact.accountId === account.id)
+      .map((contact) => ({
+        id: contact.id,
+        name: contact.name,
+        email: contact.email,
+        phone: contact.phone,
+        role: contact.role,
+        buyingRole: contact.buyingRole,
+        influence: contact.influence,
+      }))
+    const openDeals = accountDeals.filter((deal) => !['Fechado', 'Perdido'].includes(deal.stage))
+    const wonDeals = accountDeals.filter((deal) => deal.stage === 'Fechado')
+    const value = accountDeals.reduce((sum, deal) => sum + Number(deal.value || 0), 0)
+    const forecast = accountDeals.reduce((sum, deal) => sum + Number(deal.forecast || 0), 0)
+    const lastTouchAt = [...accountDeals.map((deal) => deal.lastContactAt || deal.createdAt), account.updatedAt]
+      .filter(Boolean)
+      .sort()
+      .at(-1) || account.updatedAt
+    const nextStep = openDeals.map((deal) => deal.nextStep).filter(Boolean).sort()[0] || ''
+    const health = calculateAccountHealth({ ...account, deals: accountDeals }, tasks)
+    return {
+      id: account.id,
+      company: account.name,
+      name: account.name,
+      segment: account.segment,
+      owner: account.owner,
+      deals: accountDeals,
+      contacts: accountContacts,
+      value,
+      forecast,
+      stage: accountDeals.find((deal) => deal.stage === 'Proposta')?.stage || chooseTopValue(accountDeals.map((deal) => ({ ...deal, valorEstimado: deal.value })))?.stage || 'Conta',
+      lastTouchAt,
+      nextStep,
+      wonDeals,
+      openDeals,
+      health: health.score,
+      healthDetails: health,
+      ownerAvatar: employees.find((employee) => employee.nome === account.owner)?.avatar,
+    }
+  }).sort((a, b) => b.value - a.value)
+
+  const contacts = (crmData.contacts || []).map((contact) => {
+    const contactDeals = deals.filter((deal) => deal.contactIds?.includes(contact.id) || deal.contactId === contact.id)
+    const contactTasks = tasks.filter((task) => contactDeals.some((deal) =>
+      task.relatedLeadId === deal.id ||
+      task.relatedLeadId === deal.sourceLeadId ||
+      task.dealId === deal.id ||
+      task.contactId === contact.id,
+    ))
+    return {
+      ...contact,
+      company: accountById.get(contact.accountId)?.name || '',
+      owner: accountById.get(contact.accountId)?.owner || '',
+      segment: accountById.get(contact.accountId)?.segment || 'PME',
+      status: contactDeals[0]?.stage || 'Contato',
+      deals: contactDeals,
+      tasks: contactTasks,
+      lastTouchAt: contact.updatedAt,
+      ownerAvatar: employees.find((employee) => employee.nome === accountById.get(contact.accountId)?.owner)?.avatar,
+    }
+  }).sort((a, b) => b.deals.length - a.deals.length)
+
+  const crmActivities = (crmData.activities || []).map((activity) => ({
+    ...activity,
+    company: accountById.get(activity.accountId)?.name || '',
+    contactName: contactById.get(activity.contactId)?.name || '',
+    owner: activity.actor,
+  }))
+
+  const legacyActivities = activities.map((activity) => {
+    const relatedDeal = deals.find((deal) => deal.id === activity.dealId || deal.sourceLeadId === activity.dealId)
+    return {
+      ...activity,
+      accountId: activity.accountId || relatedDeal?.accountId || '',
+      contactId: activity.contactId || relatedDeal?.contactId || '',
+      company: activity.company || relatedDeal?.company || '',
+      contactName: activity.contactName || relatedDeal?.contactName || '',
+      owner: activity.owner || relatedDeal?.owner || '',
+    }
+  })
+
+  const taskEvents = tasks.filter((task) => task.relatedLeadId || task.dealId).map((task) => {
+    const relatedDeal = deals.find((deal) =>
+      deal.id === task.dealId ||
+      deal.id === task.relatedLeadId ||
+      deal.sourceLeadId === task.relatedLeadId,
+    )
+    return {
+      id: `task-${task.id}`,
+      type: task.status === 'Concluído' ? 'won' : 'task',
+      title: task.title,
+      detail: `${task.owner} · ${task.priority} · ${task.status}`,
+      at: task.dueDate ? `${task.dueDate}T12:00:00.000Z` : new Date().toISOString(),
+      dealId: relatedDeal?.id || task.dealId || task.relatedLeadId,
+      accountId: task.accountId || relatedDeal?.accountId || '',
+      contactId: task.contactId || relatedDeal?.contactId || '',
+      company: relatedDeal?.company || '',
+      contactName: relatedDeal?.contactName || '',
+      owner: task.owner,
+      taskId: task.id,
+      status: task.status,
+    }
+  })
+
+  const timeline = [...crmActivities, ...legacyActivities, ...taskEvents]
+    .filter((event, index, list) => list.findIndex((item) => item.id === event.id) === index)
+    .sort((a, b) => new Date(b.at) - new Date(a.at))
+    .slice(0, 120)
+
+  const summary = {
+    totalValue: deals.reduce((sum, deal) => sum + deal.value, 0),
+    totalForecast: deals.reduce((sum, deal) => sum + deal.forecast, 0),
+    openDeals: deals.filter((deal) => !['Fechado', 'Perdido'].includes(deal.stage)).length,
+    wonDeals: deals.filter((deal) => deal.stage === 'Fechado').length,
+    accounts: accounts.length,
+    contacts: contacts.length,
+    enterpriseAccounts: accounts.filter((account) => account.segment === 'Enterprise').length,
+  }
+
+  return { summary, accounts, contacts, deals, timeline }
+}
+
+export function buildCommercialModel(leads, tasks = [], activities = [], employees = [], crmData = null) {
+  if (crmData?.accounts?.length && crmData?.contacts?.length && crmData?.deals?.length) {
+    return buildModelFromCrmEntities(leads, tasks, activities, employees, crmData)
+  }
+
   const accountsByName = new Map()
   const contactsByEmail = new Map()
 

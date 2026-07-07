@@ -51,7 +51,7 @@ function EntityCard({ item, tab, selected, onSelect }) {
       <button className={`entity-card ${selected ? 'is-selected' : ''}`} type="button" onClick={onSelect}>
         <div className="entity-card__top">
           {item.ownerAvatar && <PixelAvatar avatar={item.ownerAvatar} size={36} animated />}
-          <span><strong>{item.name}</strong><small>{item.company}</small></span>
+          <span><strong>{item.name}</strong><small>{item.company} · {item.buyingRole || item.role}</small></span>
           <b>{item.deals.length}</b>
         </div>
         <div className="entity-card__contact sensitive-data">
@@ -245,7 +245,7 @@ function DetailPanel({ item, tab, timeline, onEditLead, onAddTimelineNote, onOpe
   )
 }
 
-export default function CommercialWorkspace({ leads, tasks, activities, employees, onEditLead, onCreateLead, onAddTimelineNote }) {
+export default function CommercialWorkspace({ leads, tasks, activities, crmData = null, employees, onEditLead, onCreateLead, onAddTimelineNote }) {
   const [tab, setTab] = useState('accounts')
   const [query, setQuery] = useState('')
   const [segment, setSegment] = useState('Todos')
@@ -255,7 +255,7 @@ export default function CommercialWorkspace({ leads, tasks, activities, employee
       ? value.slice(0, 12).filter((item) => item?.id && item?.label && tabs.some((tabItem) => tabItem.id === item.tab))
       : [],
   )
-  const model = useMemo(() => buildCommercialModel(leads, tasks, activities, employees), [leads, tasks, activities, employees])
+  const model = useMemo(() => buildCommercialModel(leads, tasks, activities, employees, crmData), [leads, tasks, activities, employees, crmData])
 
   const collection = useMemo(() => {
     const source = model[tab] || []

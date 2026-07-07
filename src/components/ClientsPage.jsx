@@ -8,8 +8,8 @@ function findEmployeeByName(employees, name) {
   return employees.find((employee) => employee.nome === name) || employees[0]
 }
 
-export default function ClientsPage({ leads, employees = [], tasks = [], activities = [], onEdit }) {
-  const model = useMemo(() => buildCommercialModel(leads, tasks, activities, employees), [activities, employees, leads, tasks])
+export default function ClientsPage({ leads, employees = [], tasks = [], activities = [], crmData = null, onEdit }) {
+  const model = useMemo(() => buildCommercialModel(leads, tasks, activities, employees, crmData), [activities, crmData, employees, leads, tasks])
   const clients = model.accounts.filter((account) => account.wonDeals.length)
   const [selectedId, setSelectedId] = useState(clients[0]?.id || '')
   const selected = clients.find((client) => client.id === selectedId) || clients[0] || null
@@ -77,7 +77,7 @@ export default function ClientsPage({ leads, employees = [], tasks = [], activit
                 {selected.contacts.map((contact) => (
                   <div className="client-mini-row sensitive-data" key={contact.id}>
                     <strong>{contact.name}</strong>
-                    <small>{contact.role} · influência {contact.influence}</small>
+                    <small>{contact.buyingRole || contact.role} · influência {contact.influence}</small>
                   </div>
                 ))}
               </div>
