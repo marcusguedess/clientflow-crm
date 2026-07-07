@@ -21,6 +21,37 @@ export function toDate(value) {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
+export function normalizeGoalConfig(value = {}) {
+  const rawGoal = Number(value?.periodGoal)
+  return {
+    ...DEFAULT_GOAL_CONFIG,
+    ...(value && typeof value === 'object' ? value : {}),
+    periodGoal: Number.isFinite(rawGoal) ? Math.max(0, rawGoal) : DEFAULT_GOAL_CONFIG.periodGoal,
+    currency: value?.currency === 'BRL' ? 'BRL' : DEFAULT_GOAL_CONFIG.currency,
+    period: typeof value?.period === 'string' && value.period.trim() ? value.period.trim().slice(0, 40) : DEFAULT_GOAL_CONFIG.period,
+  }
+}
+
+export function startOfDay(date = new Date()) {
+  const nextDate = new Date(date)
+  nextDate.setHours(0, 0, 0, 0)
+  return nextDate
+}
+
+export function endOfDay(date = new Date()) {
+  const nextDate = new Date(date)
+  nextDate.setHours(23, 59, 59, 999)
+  return nextDate
+}
+
+export function classifyDateAgainstDay(value, today = new Date()) {
+  const date = toDate(value)
+  if (!date) return 'none'
+  if (date < startOfDay(today)) return 'overdue'
+  if (date <= endOfDay(today)) return 'today'
+  return 'future'
+}
+
 export function daysBetween(from, to = new Date()) {
   const start = toDate(from)
   if (!start) return null
@@ -145,10 +176,11 @@ export function calculateAccountHealth(account, tasks = [], today = new Date()) 
 }
 
 export function buildPipelineMetrics(leads, tasks = [], goalConfig = DEFAULT_GOAL_CONFIG, today = new Date()) {
+  const safeGoalConfig = normalizeGoalConfig(goalConfig)
   const wonRevenue = getWonRevenue(leads)
   const openPipeline = getOpenPipelineValue(leads)
   const weightedForecast = getWeightedForecast(leads)
-  const goal = Number(goalConfig.periodGoal || DEFAULT_GOAL_CONFIG.periodGoal)
+  const goal = safeGoalConfig.periodGoal
   const won = leads.filter((lead) => lead.status === 'Fechado')
   const lost = leads.filter((lead) => lead.status === 'Perdido')
   const open = leads.filter((lead) => !['Fechado', 'Perdido'].includes(lead.status))
@@ -195,25 +227,42 @@ export function buildRevenueTrend(leads, limit = 7) {
 }
 
 export function buildTodayQueue(leads, tasks = [], today = new Date()) {
-  const todayEnd = new Date(today)
-  todayEnd.setHours(23, 59, 59, 999)
+  const data = buildTodayQueueData(leads, tasks, today)
+  return data.priorityQueue
+}
 
+export function buildTodayQueueData(leads, tasks = [], today = new Date()) {
   const openLeads = leads.filter((lead) => !['Fechado', 'Perdido'].includes(lead.status))
   const overdueTasks = tasks
-    .filter((task) => task.status !== 'Concluído' && task.dueDate && toDate(task.dueDate) < todayEnd)
+    .filter((task) => task.status !== 'Concluído' && classifyDateAgainstDay(task.dueDate, today) === 'overdue')
     .map((task) => ({
       id: `task-${task.id}`,
       type: 'task',
       priority: task.priority === 'Alta' ? 90 : 70,
       title: task.title,
-      detail: `${task.owner} · prazo ${toDate(task.dueDate)?.toLocaleDateString('pt-BR') || 'sem data'}`,
+      detail: `${task.owner} · prazo vencido ${toDate(task.dueDate)?.toLocaleDateString('pt-BR') || 'sem data'}`,
       taskId: task.id,
       dealId: task.relatedLeadId,
       action: 'complete-task',
+      timing: 'overdue',
+    }))
+
+  const todayTasks = tasks
+    .filter((task) => task.status !== 'Concluído' && classifyDateAgainstDay(task.dueDate, today) === 'today')
+    .map((task) => ({
+      id: `task-today-${task.id}`,
+      type: 'task',
+      priority: task.priority === 'Alta' ? 75 : 58,
+      title: task.title,
+      detail: `${task.owner} · para hoje`,
+      taskId: task.id,
+      dealId: task.relatedLeadId,
+      action: 'complete-task',
+      timing: 'today',
     }))
 
   const overdueNextSteps = openLeads
-    .filter((lead) => lead.proximoPasso && toDate(lead.proximoPasso) < todayEnd)
+    .filter((lead) => lead.proximoPasso && classifyDateAgainstDay(lead.proximoPasso, today) === 'overdue')
     .map((lead) => ({
       id: `next-${lead.id}`,
       type: 'deal',
@@ -222,6 +271,20 @@ export function buildTodayQueue(leads, tasks = [], today = new Date()) {
       detail: `Próximo passo vencido · ${lead.status} · ${lead.responsavel}`,
       dealId: lead.id,
       action: 'open-deal',
+      timing: 'overdue',
+    }))
+
+  const todayNextSteps = openLeads
+    .filter((lead) => lead.proximoPasso && classifyDateAgainstDay(lead.proximoPasso, today) === 'today')
+    .map((lead) => ({
+      id: `next-today-${lead.id}`,
+      type: 'deal',
+      priority: Number(lead.valorEstimado || 0) >= 50000 ? 78 : 60,
+      title: `Acompanhar ${lead.empresa}`,
+      detail: `Próximo passo hoje · ${lead.status} · ${lead.responsavel}`,
+      dealId: lead.id,
+      action: 'open-deal',
+      timing: 'today',
     }))
 
   const noNextStep = openLeads
@@ -235,20 +298,30 @@ export function buildTodayQueue(leads, tasks = [], today = new Date()) {
       detail: `${lead.status} · ${lead.responsavel} · sem próxima ação`,
       dealId: lead.id,
       action: 'open-deal',
+      timing: 'missing',
     }))
 
-  return [...overdueTasks, ...overdueNextSteps, ...noNextStep]
+  const fullQueue = [...overdueTasks, ...overdueNextSteps, ...todayTasks, ...todayNextSteps, ...noNextStep]
     .sort((a, b) => b.priority - a.priority)
-    .slice(0, 8)
+
+  return {
+    overdueTasks,
+    todayTasks,
+    overdueNextSteps,
+    todayNextSteps,
+    noNextStep,
+    fullQueue,
+    priorityQueue: fullQueue.slice(0, 8),
+  }
 }
 
 export function buildBusinessAlerts(leads, tasks, today = new Date()) {
-  const queue = buildTodayQueue(leads, tasks, today)
+  const queueData = buildTodayQueueData(leads, tasks, today)
   const metrics = buildPipelineMetrics(leads, tasks, DEFAULT_GOAL_CONFIG, today)
   const openLeads = leads.filter((lead) => !['Fechado', 'Perdido'].includes(lead.status))
   const noNextStep = openLeads.filter((lead) => !lead.proximoPasso)
-  const overdueTasks = queue.filter((item) => item.type === 'task')
-  const overdueNextSteps = queue.filter((item) => item.id.startsWith('next-'))
+  const overdueTasks = queueData.overdueTasks
+  const overdueNextSteps = queueData.overdueNextSteps
   const closingSoon = openLeads.filter((lead) => {
     const closeDate = toDate(lead.previsaoFechamento)
     if (!closeDate) return false

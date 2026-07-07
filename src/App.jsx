@@ -26,8 +26,9 @@ import { seedLeads } from './data/seedData'
 import { seedEmployees, seedMessages, seedPosts } from './data/teamData'
 import { seedActivities, seedTasks } from './data/workData'
 import { buildCitySignals } from './domain/clientflowBridge'
-import { createDomainEvent, DOMAIN_EVENT_TYPES, eventToTimelineEvent } from './domain/events'
-import { analyzeDealRisk, DEFAULT_GOAL_CONFIG } from './domain/metrics'
+import { createDomainEvent, DOMAIN_EVENT_TYPES, domainEventsToTimelineEvents } from './domain/events'
+import { analyzeDealRisk, DEFAULT_GOAL_CONFIG, normalizeGoalConfig } from './domain/metrics'
+import { normalizeTask } from './domain/tasks'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import { usePersistentState } from './hooks/usePersistentState'
 import { calculateLeadStats } from './utils/leadStats'
@@ -62,11 +63,7 @@ export default function App() {
       ? value.slice(0, 250).filter((event) => event?.id && event?.type && event?.at)
       : [],
   )
-  const [goalConfig, setGoalConfig] = usePersistentState('clientflow-goal-config-v1', DEFAULT_GOAL_CONFIG, (value) => ({
-    ...DEFAULT_GOAL_CONFIG,
-    ...(value && typeof value === 'object' ? value : {}),
-    periodGoal: Number(value?.periodGoal || DEFAULT_GOAL_CONFIG.periodGoal),
-  }))
+  const [goalConfig, setGoalConfig] = usePersistentState('clientflow-goal-config-v1', DEFAULT_GOAL_CONFIG, normalizeGoalConfig)
   const [timelineNotes, setTimelineNotes] = usePersistentState('clientflow-timeline-notes-v1', [], (value) =>
     Array.isArray(value)
       ? value.slice(0, 500).map((note) => ({
@@ -111,7 +108,7 @@ export default function App() {
   const currentEmployee = employees[0]
   const timelineActivities = useMemo(() =>
     [
-      ...domainEvents.map(eventToTimelineEvent),
+      ...domainEventsToTimelineEvents(domainEvents),
       ...timelineNotes,
       ...seedActivities,
     ].sort((a, b) => new Date(b.at) - new Date(a.at)),
@@ -423,8 +420,11 @@ export default function App() {
     setToast({ message: `${employee.nome.split(' ')[0]} recebeu um toque de atenção.` })
   }
 
-  function createTask(task) {
-    const nextTask = { ...task, id: globalThis.crypto.randomUUID() }
+  function createTask(task, defaults = {}) {
+    const nextTask = normalizeTask(task, {
+      owner: currentEmployee?.nome || 'Sem responsável',
+      ...defaults,
+    })
     setTasks((current) => [nextTask, ...current])
     emitDomainEvent(DOMAIN_EVENT_TYPES.TASK_CREATED, {
       taskId: nextTask.id,
@@ -547,7 +547,7 @@ export default function App() {
       setTasks(sanitizeTasks(data.tasks, seedTasks))
       if (Array.isArray(data.timelineNotes)) setTimelineNotes(data.timelineNotes)
       if (Array.isArray(data.domainEvents)) setDomainEvents(data.domainEvents)
-      if (data.goalConfig && typeof data.goalConfig === 'object') setGoalConfig({ ...DEFAULT_GOAL_CONFIG, ...data.goalConfig })
+      if (data.goalConfig && typeof data.goalConfig === 'object') setGoalConfig(normalizeGoalConfig(data.goalConfig))
       setToast({ message: 'Backup validado e restaurado.' })
     } catch {
       setToast({ message: 'Backup inválido ou senha incorreta.', tone: 'warning' })
@@ -595,7 +595,7 @@ export default function App() {
             />
           )}
 
-          {activeView === 'performance' && <PerformanceDashboard leads={leads} employees={employees} tasks={tasks} goalConfig={goalConfig} onGoalConfigChange={setGoalConfig} onNavigate={setActiveView} />}
+          {activeView === 'performance' && <PerformanceDashboard leads={leads} employees={employees} tasks={tasks} goalConfig={goalConfig} onGoalConfigChange={(nextGoalConfig) => setGoalConfig(normalizeGoalConfig(nextGoalConfig))} onNavigate={setActiveView} />}
 
           {activeView === 'pipeline' && (
             <section className="pipeline-section">
@@ -681,7 +681,7 @@ export default function App() {
               citySignals={citySignals}
               onOpenPipeline={() => setActiveView('pipeline')}
               onOpenMessenger={() => setActiveView('messenger')}
-              onCreateTask={(task) => createTask({ owner: currentEmployee.nome, priority: 'Média', sticker: '📌', ...task })}
+              onCreateTask={(task) => createTask(task, { owner: currentEmployee?.nome || 'Sem responsável', priority: 'Média', sticker: '📌', relatedLeadId: '' })}
               onSound={(name) => playSound(name, soundEnabled)}
             />
           )}

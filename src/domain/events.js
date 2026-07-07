@@ -65,3 +65,48 @@ export function eventToTimelineEvent(event) {
     owner: payload.owner || event.actor || '',
   }
 }
+
+function hasRelatedEvent(event, events, predicate) {
+  const payload = event.payload || {}
+  const eventTime = Date.parse(event.at)
+  return events.some((candidate) => {
+    if (candidate.id === event.id) return false
+    const candidatePayload = candidate.payload || {}
+    if (payload.dealId && candidatePayload.dealId !== payload.dealId) return false
+    if (payload.taskId && candidatePayload.taskId !== payload.taskId) return false
+    const candidateTime = Date.parse(candidate.at)
+    const sameActionWindow = Number.isFinite(eventTime) && Number.isFinite(candidateTime)
+      ? Math.abs(candidateTime - eventTime) <= 3000
+      : true
+    return sameActionWindow && predicate(candidate)
+  })
+}
+
+export function shouldShowEventInTimeline(event, events = []) {
+  if (event.type === DOMAIN_EVENT_TYPES.DEAL_UPDATED) {
+    return !hasRelatedEvent(event, events, (candidate) =>
+      [
+        DOMAIN_EVENT_TYPES.DEAL_STAGE_CHANGED,
+        DOMAIN_EVENT_TYPES.DEAL_WON,
+        DOMAIN_EVENT_TYPES.DEAL_LOST,
+      ].includes(candidate.type),
+    )
+  }
+
+  if (event.type === DOMAIN_EVENT_TYPES.DEAL_STAGE_CHANGED && ['Fechado', 'Perdido'].includes(event.payload?.to)) {
+    const finalEventType = event.payload?.to === 'Fechado' ? DOMAIN_EVENT_TYPES.DEAL_WON : DOMAIN_EVENT_TYPES.DEAL_LOST
+    return !hasRelatedEvent(event, events, (candidate) => candidate.type === finalEventType)
+  }
+
+  if (event.type === DOMAIN_EVENT_TYPES.TASK_CREATED) {
+    return !hasRelatedEvent(event, events, (candidate) => candidate.type === DOMAIN_EVENT_TYPES.FOLLOW_UP_SCHEDULED)
+  }
+
+  return true
+}
+
+export function domainEventsToTimelineEvents(events = []) {
+  return events
+    .filter((event) => shouldShowEventInTimeline(event, events))
+    .map(eventToTimelineEvent)
+}

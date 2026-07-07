@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { TASK_STATUSES } from '../data/workData'
+import { normalizeTask } from '../domain/tasks'
 import { cleanText } from '../utils/sanitizeData'
 
 const stickerOptions = ['🔥', '📌', '✨', '✅', '🌱', '🚀', '💡', '☕']
@@ -7,6 +8,10 @@ const stickerOptions = ['🔥', '📌', '✨', '✅', '🌱', '🚀', '💡', '�
 export default function TaskBoard({ tasks, employees, leads = [], onCreate, onMove, onDelete }) {
   const [formOpen, setFormOpen] = useState(false)
   const [form, setForm] = useState({ title: '', description: '', owner: employees[0].nome, priority: 'Média', dueDate: '', sticker: '📌', relatedLeadId: '' })
+  const safeTasks = useMemo(() => tasks.map((task, index) => normalizeTask(task, {
+    id: task?.id || `legacy-task-${index}`,
+    owner: employees[0]?.nome || 'Sem responsável',
+  })), [employees, tasks])
 
   function submit(event) {
     event.preventDefault()
@@ -43,12 +48,13 @@ export default function TaskBoard({ tasks, employees, leads = [], onCreate, onMo
       <div className="task-board">
         {TASK_STATUSES.map((status) => (
           <section className="task-column" key={status}>
-            <header><strong>{status}</strong><span>{tasks.filter((task) => task.status === status).length}</span></header>
+            <header><strong>{status}</strong><span>{safeTasks.filter((task) => task.status === status).length}</span></header>
             <div>
-              {tasks.filter((task) => task.status === status).map((task) => {
+              {safeTasks.filter((task) => task.status === status).map((task) => {
                 const relatedLead = leads.find((lead) => lead.id === task.relatedLeadId)
+                const priorityClass = task.priority.toLowerCase()
                 return (
-                  <article className={`task-card priority-${task.priority.toLowerCase()}`} key={task.id}>
+                  <article className={`task-card priority-${priorityClass}`} key={task.id}>
                     <span className="task-sticker">{task.sticker}</span>
                     <button className="task-delete" type="button" onClick={() => onDelete(task.id)} aria-label={`Excluir ${task.title}`}>×</button>
                     <span className="task-priority">{task.priority}</span>
