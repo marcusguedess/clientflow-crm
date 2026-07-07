@@ -1,14 +1,14 @@
 import { lazy, Suspense, useMemo, useState } from 'react'
-import { getLeadProbability } from '../utils/businessInsights'
+import { buildPipelineMetrics, buildRevenueTrend, DEFAULT_GOAL_CONFIG } from '../domain/metrics'
 import { formatCurrency } from '../utils/formatCurrency'
 import PixelAvatar from './PixelAvatar'
 
 const ThreeShowcase = lazy(() => import('./ThreeShowcase'))
 
 const periods = {
-  '7d': { label: '7 dias', factor: 0.72 },
-  '30d': { label: '30 dias', factor: 1 },
-  '90d': { label: '90 dias', factor: 1.34 },
+  '7d': { label: '7 ganhos', limit: 7 },
+  '30d': { label: '12 ganhos', limit: 12 },
+  '90d': { label: '18 ganhos', limit: 18 },
 }
 
 const dashboardProfiles = {
@@ -18,20 +18,14 @@ const dashboardProfiles = {
   customer: { label: 'Clientes', description: 'Retenção, expansão e atendimento' },
 }
 
-const chartLabels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Hoje']
-
-function buildSeries(base, factor) {
-  const multipliers = [0.42, 0.58, 0.51, 0.76, 0.68, 0.87, 1]
-  return multipliers.map((item, index) => Math.max(1, Math.round((base + index * 3400) * item * factor)))
-}
-
-function AreaChart({ values, selectedIndex, onSelect }) {
+function AreaChart({ values, labels, selectedIndex, onSelect }) {
   const width = 620
   const height = 210
   const padding = 26
   const max = Math.max(...values, 1)
+  const safeIndex = Math.min(Math.max(selectedIndex, 0), values.length - 1)
   const points = values.map((value, index) => ({
-    x: padding + index * ((width - padding * 2) / (values.length - 1)),
+    x: values.length === 1 ? width / 2 : padding + index * ((width - padding * 2) / (values.length - 1)),
     y: height - padding - (value / max) * (height - padding * 2),
     value,
   }))
@@ -58,8 +52,8 @@ function AreaChart({ values, selectedIndex, onSelect }) {
         <polyline points={line} fill="none" stroke="url(#revenueLine)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" className="chart-line" />
         {points.map((point, index) => (
           <g
-            key={chartLabels[index]}
-            className={`chart-point ${selectedIndex === index ? 'is-selected' : ''}`}
+            key={`${labels[index]}-${index}`}
+            className={`chart-point ${safeIndex === index ? 'is-selected' : ''}`}
             onClick={() => onSelect(index)}
             onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === ' ') onSelect(index)
@@ -67,20 +61,27 @@ function AreaChart({ values, selectedIndex, onSelect }) {
             role="button"
             tabIndex="0"
           >
-            <circle cx={point.x} cy={point.y} r={selectedIndex === index ? 8 : 5} />
-            <text x={point.x} y={height - 5} textAnchor="middle">{chartLabels[index]}</text>
+            <circle cx={point.x} cy={point.y} r={safeIndex === index ? 8 : 5} />
+            <text x={point.x} y={height - 5} textAnchor="middle">{labels[index]}</text>
           </g>
         ))}
       </svg>
-      <div className="chart-tooltip" style={{ left: `${(points[selectedIndex].x / width) * 100}%`, top: `${(points[selectedIndex].y / height) * 100}%` }}>
-        <small>{chartLabels[selectedIndex]}</small>
-        <strong>{formatCurrency(points[selectedIndex].value)}</strong>
+      <div className="chart-tooltip" style={{ left: `${(points[safeIndex].x / width) * 100}%`, top: `${(points[safeIndex].y / height) * 100}%` }}>
+        <small>{labels[safeIndex]}</small>
+        <strong>{formatCurrency(points[safeIndex].value)}</strong>
       </div>
     </div>
   )
 }
 
-export default function PerformanceDashboard({ leads, employees, tasks = [], onNavigate }) {
+export default function PerformanceDashboard({
+  leads,
+  employees,
+  tasks = [],
+  goalConfig = DEFAULT_GOAL_CONFIG,
+  onGoalConfigChange,
+  onNavigate,
+}) {
   const [period, setPeriod] = useState('30d')
   const [selectedPoint, setSelectedPoint] = useState(6)
   const [rankingMode, setRankingMode] = useState('score')
@@ -113,6 +114,7 @@ export default function PerformanceDashboard({ leads, employees, tasks = [], onN
     const averageTicket = won.length ? Math.round(revenue / won.length) : 0
     return { won: won.length, lost: lost.length, newLeads: newLeads.length, revenue, pipeline, open: open.length, averageTicket }
   }, [filteredLeads])
+  const pipelineMetrics = useMemo(() => buildPipelineMetrics(filteredLeads, tasks, goalConfig), [filteredLeads, tasks, goalConfig])
 
   const sourceData = useMemo(() => {
     const counts = filteredLeads.reduce((result, lead) => ({ ...result, [lead.origem || 'Outros']: (result[lead.origem || 'Outros'] || 0) + 1 }), {})
@@ -123,18 +125,12 @@ export default function PerformanceDashboard({ leads, employees, tasks = [], onN
     const owned = filteredLeads.filter((lead) => lead.responsavel === employee.nome)
     const closed = owned.filter((lead) => lead.status === 'Fechado')
     const value = closed.reduce((sum, lead) => sum + Number(lead.valorEstimado || 0), 0)
-    const score = Math.min(100, Math.max(18, closed.length * 32 + owned.length * 8 + (12 - index) * 2))
+    const activeTasks = tasks.filter((task) => task.owner === employee.nome && task.status !== 'Concluído').length
+    const score = Math.min(100, Math.round(closed.length * 24 + owned.length * 6 + Math.min(24, activeTasks * 4) + (value > 0 ? 12 : 0)))
     return { employee, score, deals: closed.length, value }
-  }).sort((a, b) => rankingMode === 'value' ? b.value - a.value : b.score - a.score), [employees, filteredLeads, rankingMode])
+  }).sort((a, b) => rankingMode === 'value' ? b.value - a.value : b.score - a.score), [employees, filteredLeads, rankingMode, tasks])
 
-  const statusHealth = useMemo(() => {
-    const stages = ['Novo Lead', 'Contato Feito', 'Reunião', 'Proposta', 'Fechado', 'Perdido']
-    return stages.map((status) => {
-      const items = filteredLeads.filter((lead) => lead.status === status)
-      const value = items.reduce((sum, lead) => sum + Number(lead.valorEstimado || 0), 0)
-      return { status, count: items.length, value }
-    })
-  }, [filteredLeads])
+  const statusHealth = pipelineMetrics.stageTotals
 
   const segmentData = useMemo(() => {
     const segments = ['PME', 'Mid-market', 'Enterprise', 'Setor público']
@@ -145,18 +141,15 @@ export default function PerformanceDashboard({ leads, employees, tasks = [], onN
     })
   }, [filteredLeads])
 
-  const series = buildSeries(Math.max(metrics.revenue, 18000), periods[period].factor)
-  const goal = 250000
-  const goalProgress = Math.min(100, Math.round((metrics.revenue / goal) * 100))
+  const revenueTrend = buildRevenueTrend(filteredLeads, periods[period].limit)
+  const series = revenueTrend.map((item) => item.value)
+  const chartLabels = revenueTrend.map((item) => item.label)
+  const goal = pipelineMetrics.goal
+  const goalProgress = goal ? Math.min(100, Math.round((metrics.revenue / goal) * 100)) : 0
   const conversion = metrics.won + metrics.lost ? Math.round((metrics.won / (metrics.won + metrics.lost)) * 100) : 0
-  const weightedForecast = Math.round(
-    statusHealth.reduce((sum, item) => {
-      const items = filteredLeads.filter((lead) => lead.status === item.status)
-      return sum + items.reduce((total, lead) => total + Number(lead.valorEstimado || 0) * (getLeadProbability(lead) / 100), 0)
-    }, 0),
-  )
-  const coverage = goal ? Math.round(((metrics.pipeline + metrics.revenue) / goal) * 100) : 0
-  const stalled = filteredLeads.filter((lead) => ['Novo Lead', 'Contato Feito'].includes(lead.status) && Number(lead.valorEstimado || 0) >= 10000)
+  const weightedForecast = pipelineMetrics.weightedForecast
+  const coverage = pipelineMetrics.goalCoverage
+  const stalled = pipelineMetrics.risks.filter(({ risk }) => ['medium', 'high'].includes(risk.level)).map(({ lead }) => lead)
   const bestOwner = performance[0]
   const bestSource = sourceData[0]
   const overdueTasks = tasks.filter((task) => task.status !== 'Concluído' && task.dueDate && new Date(`${task.dueDate}T23:59:59`) < new Date())
@@ -207,9 +200,10 @@ export default function PerformanceDashboard({ leads, employees, tasks = [], onN
     return queues[profile]
   }, [activeTasks.length, coverage, filteredLeads, overdueTasks.length, profile, stalled.length, tasks, urgentTasks.length])
   const comparisonLabel = comparison === 'previous' ? 'vs. período anterior' : 'vs. meta'
+  const previousRevenue = series.length > 1 ? series[series.length - 2] : 0
   const revenueDelta = comparison === 'previous'
-    ? Math.round(((metrics.revenue - metrics.revenue / periods[period].factor) / Math.max(metrics.revenue / periods[period].factor, 1)) * 100)
-    : Math.round(((metrics.revenue - goal) / goal) * 100)
+    ? Math.round(((metrics.revenue - previousRevenue) / Math.max(previousRevenue, 1)) * 100)
+    : goal ? Math.round(((metrics.revenue - goal) / goal) * 100) : 0
 
   return (
     <section className="performance-dashboard">
@@ -313,17 +307,31 @@ export default function PerformanceDashboard({ leads, employees, tasks = [], onN
       <div className="insight-grid">
         <article className="revenue-panel">
           <header>
-            <div><span className="eyebrow">Receita projetada</span><h2>{formatCurrency(series[selectedPoint])}</h2><p>Projeção do período selecionado</p></div>
+            <div><span className="eyebrow">Receita projetada</span><h2>{formatCurrency(series[Math.min(selectedPoint, series.length - 1)])}</h2><p>Receita ganha registrada no período selecionado</p></div>
             <span className="live-pill"><i /> Ao vivo</span>
           </header>
-          <AreaChart values={series} selectedIndex={selectedPoint} onSelect={setSelectedPoint} />
+          <AreaChart values={series} labels={chartLabels} selectedIndex={Math.min(selectedPoint, series.length - 1)} onSelect={setSelectedPoint} />
         </article>
 
         <article className="goal-panel">
           <div className="goal-orbit" style={{ '--progress': `${goalProgress * 3.6}deg` }}>
             <div><strong>{goalProgress}%</strong><small>da meta</small></div>
           </div>
-          <div className="goal-copy"><span className="eyebrow">Meta mensal</span><h2>{formatCurrency(goal)}</h2><p>Faltam {formatCurrency(Math.max(0, goal - metrics.revenue))} para completar.</p></div>
+          <div className="goal-copy">
+            <span className="eyebrow">Meta {goalConfig.period}</span>
+            <h2>{formatCurrency(goal)}</h2>
+            <p>Faltam {formatCurrency(Math.max(0, goal - metrics.revenue))} para completar.</p>
+            <label className="goal-config-field">
+              <span>Ajustar meta</span>
+              <input
+                type="number"
+                min="0"
+                step="1000"
+                value={goal}
+                onChange={(event) => onGoalConfigChange?.({ ...goalConfig, periodGoal: Number(event.target.value || 0) })}
+              />
+            </label>
+          </div>
           <div className="goal-confetti" aria-hidden="true"><i /><i /><i /><i /><i /></div>
         </article>
 

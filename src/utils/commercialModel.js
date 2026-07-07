@@ -1,4 +1,4 @@
-import { getLeadProbability } from './businessInsights'
+import { calculateAccountHealth, getDealProbability } from '../domain/metrics'
 
 function normalizeDate(value) {
   return Number.isNaN(Date.parse(value)) ? null : value
@@ -25,8 +25,8 @@ export function buildCommercialModel(leads, tasks = [], activities = [], employe
       segment: lead.segmento || 'PME',
       stage: lead.status,
       value: Number(lead.valorEstimado || 0),
-      probability: getLeadProbability(lead),
-      forecast: Math.round(Number(lead.valorEstimado || 0) * (getLeadProbability(lead) / 100)),
+      probability: getDealProbability(lead),
+      forecast: Math.round(Number(lead.valorEstimado || 0) * (getDealProbability(lead) / 100)),
       closeDate: lead.previsaoFechamento || '',
       nextStep: lead.proximoPasso || '',
       lossReason: lead.motivoPerda || '',
@@ -85,6 +85,16 @@ export function buildCommercialModel(leads, tasks = [], activities = [], employe
     const contact = contactsByEmail.get(contactKey)
     contact.deals.push(deal)
     contact.lastTouchAt = contact.lastTouchAt && contact.lastTouchAt > deal.createdAt ? contact.lastTouchAt : deal.createdAt
+    if (!account.contacts.some((item) => item.id === contact.id)) {
+      account.contacts.push({
+        id: contact.id,
+        name: contact.name,
+        email: contact.email,
+        phone: contact.phone,
+        role: lead.status === 'Fechado' ? 'campeão interno' : 'contato principal',
+        influence: Number(lead.valorEstimado || 0) >= 50000 ? 'alta' : 'média',
+      })
+    }
   })
 
   tasks.forEach((task) => {
@@ -129,19 +139,13 @@ export function buildCommercialModel(leads, tasks = [], activities = [], employe
   const accounts = [...accountsByName.values()].map((account) => {
     const openDeals = account.deals.filter((deal) => !['Fechado', 'Perdido'].includes(deal.stage))
     const wonDeals = account.deals.filter((deal) => deal.stage === 'Fechado')
-    const overdueTask = tasks.find((task) => task.relatedLeadId && account.deals.some((deal) => deal.id === task.relatedLeadId) && task.status !== 'Concluído')
-    const health =
-      100
-      - (openDeals.length ? 5 : 0)
-      - (overdueTask ? 20 : 0)
-      - (account.deals.some((deal) => !deal.nextStep && !['Fechado', 'Perdido'].includes(deal.stage)) ? 10 : 0)
-      + (wonDeals.length ? 8 : 0)
+    const health = calculateAccountHealth(account, tasks)
     return {
       ...account,
       wonDeals,
       openDeals,
-      contacts: account.deals.map((deal) => deal.contactName),
-      health: Math.max(22, Math.min(100, health)),
+      health: health.score,
+      healthDetails: health,
       ownerAvatar: employees.find((employee) => employee.nome === account.owner)?.avatar,
       lastTouchAt: account.lastTouchAt,
     }
@@ -165,8 +169,8 @@ export function buildCommercialModel(leads, tasks = [], activities = [], employe
     phone: lead.telefone,
     stage: lead.status,
     value: Number(lead.valorEstimado || 0),
-    forecast: Math.round(Number(lead.valorEstimado || 0) * (getLeadProbability(lead) / 100)),
-    probability: getLeadProbability(lead),
+    forecast: Math.round(Number(lead.valorEstimado || 0) * (getDealProbability(lead) / 100)),
+    probability: getDealProbability(lead),
     segment: lead.segmento || 'PME',
     closeDate: lead.previsaoFechamento || '',
     nextStep: lead.proximoPasso || '',

@@ -320,6 +320,30 @@
   background: #fdeff1;
 }
 
+.goal-config-field {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+.goal-config-field span {
+  color: #7f8899;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.goal-config-field input {
+  width: min(180px, 100%);
+  padding: 8px 10px;
+  border: 1px solid #dfe5ef;
+  border-radius: 10px;
+  color: #2c374e;
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+}
+
 @media (max-width: 1180px) {
   .dashboard-control-bar {
     align-items: flex-start;

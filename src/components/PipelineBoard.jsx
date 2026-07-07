@@ -16,7 +16,7 @@ function findEmployeeByName(employees, name) {
   return employees.find((employee) => employee.nome === name) || employees[0]
 }
 
-export default function PipelineBoard({ leads, employees = [], onEdit, onDelete, onStatusChange }) {
+export default function PipelineBoard({ leads, employees = [], tasks = [], onEdit, onDelete, onStatusChange }) {
   const [selectedStage, setSelectedStage] = useState('Todos')
   const stageTotals = useMemo(() => PIPELINE_STATUSES.map((status) => {
     const items = leads.filter((lead) => lead.status === status)
@@ -83,6 +83,7 @@ export default function PipelineBoard({ leads, employees = [], onEdit, onDelete,
                       key={lead.id}
                       lead={lead}
                       owner={findEmployeeByName(employees, lead.responsavel)}
+                      tasks={tasks}
                       compact
                       onEdit={onEdit}
                       onDelete={onDelete}

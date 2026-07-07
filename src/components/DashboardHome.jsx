@@ -1,6 +1,7 @@
 import BusinessCommandCenter from './BusinessCommandCenter'
 import PixelAvatar from './PixelAvatar'
 import StatCard from './StatCard'
+import { buildTodayQueue } from '../domain/metrics'
 import { formatCurrency } from '../utils/formatCurrency'
 
 function MetricIcon({ type }) {
@@ -31,13 +32,27 @@ export default function DashboardHome({
   tasks,
   employees,
   currentEmployee,
+  goalConfig,
   onNavigate,
   onEditLead,
+  onCompleteTask,
 }) {
   const activeEmployees = employees.filter((employee) => employee.status !== 'offline')
   const openLeads = leads.filter((lead) => !['Fechado', 'Perdido'].includes(lead.status))
   const recentLeads = openLeads.slice(0, 4)
   const urgentTasks = tasks.filter((task) => task.priority === 'Alta' && task.status !== 'Concluído').length
+  const todayQueue = buildTodayQueue(leads, tasks)
+
+  function handleQueueAction(item) {
+    if (item.action === 'complete-task' && item.taskId) {
+      onCompleteTask?.(item.taskId)
+      return
+    }
+    if (item.dealId) {
+      const lead = leads.find((lead) => lead.id === item.dealId)
+      if (lead) onEditLead(lead)
+    }
+  }
 
   return (
     <div className="dashboard-home">
@@ -73,6 +88,37 @@ export default function DashboardHome({
         <StatCard label="Conversão" value={`${stats.conversao}%`} detail="entre negócios concluídos" tone="orange" icon={<MetricIcon type="rate" />} />
       </section>
 
+      <section className="today-queue" aria-label="Fila de hoje">
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">Hoje</span>
+            <h2>O que merece atenção agora</h2>
+          </div>
+          <button className="button button--text" type="button" onClick={() => onNavigate('tasks')}>Abrir Flowboard</button>
+        </div>
+        {todayQueue.length ? (
+          <div className="today-queue__list">
+            {todayQueue.slice(0, 5).map((item) => (
+              <article className={`today-item today-item--${item.type}`} key={item.id}>
+                <span>{item.type === 'task' ? 'Tarefa' : 'Deal'}</span>
+                <div>
+                  <strong>{item.title}</strong>
+                  <small>{item.detail}</small>
+                </div>
+                <button className="button button--ghost" type="button" onClick={() => handleQueueAction(item)}>
+                  {item.action === 'complete-task' ? 'Concluir' : 'Abrir contexto'}
+                </button>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <strong>Nenhuma urgência operacional agora</strong>
+            <span>Quando houver tarefa vencida ou deal sem próximo passo, aparecerá aqui.</span>
+          </div>
+        )}
+      </section>
+
       <section className="home-destinations" aria-label="Áreas principais">
         <button type="button" onClick={() => onNavigate('pipeline')}>
           <DestinationIcon type="pipeline" />
@@ -96,7 +142,7 @@ export default function DashboardHome({
         </button>
       </section>
 
-      <BusinessCommandCenter leads={leads} tasks={tasks} onNavigate={onNavigate} />
+      <BusinessCommandCenter leads={leads} tasks={tasks} goalConfig={goalConfig} onNavigate={onNavigate} />
 
       <section className="home-opportunities">
         <div className="section-heading">

@@ -4026,6 +4026,108 @@ select {
   margin: 0.4rem 0 0;
 }
 
+.lead-card__signals--risk {
+  margin-top: 0.55rem;
+}
+
+.lead-card__signals--risk span:first-child {
+  border: 1px solid rgba(225, 164, 66, .32);
+  color: #94630f;
+  background: rgba(225, 164, 66, .12);
+}
+
+.lead-card__signals--high span:first-child {
+  border-color: rgba(224, 75, 75, .35);
+  color: #a83232;
+  background: rgba(224, 75, 75, .12);
+}
+
+.lead-card__signals--low span:first-child,
+.lead-card__signals--none span:first-child {
+  border-color: rgba(54, 183, 137, .35);
+  color: #237a5e;
+  background: rgba(54, 183, 137, .12);
+}
+
+.entity-health-grid {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.entity-health-grid > div {
+  padding: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .04);
+}
+
+.entity-health-grid strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--text-primary);
+  font-size: 0.78rem;
+}
+
+.entity-health-grid li {
+  margin-left: 1rem;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.city-player-chip {
+  display: grid;
+  gap: 4px;
+  margin-right: auto;
+  min-width: 160px;
+}
+
+.city-player-chip span {
+  color: #848d9e;
+  font-size: 7px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.city-player-chip strong {
+  color: #4d5970;
+  font-size: 10px;
+}
+
+.city-signal-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.city-signal-strip button {
+  padding: 10px 12px;
+  border: 1px solid #dce1ea;
+  border-radius: 13px;
+  color: #4d5970;
+  text-align: left;
+  background: rgba(255, 255, 255, .86);
+  box-shadow: 0 7px 20px rgba(31, 42, 67, .05);
+}
+
+.city-signal-strip span,
+.city-signal-strip small {
+  display: block;
+}
+
+.city-signal-strip span {
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.city-signal-strip small {
+  margin-top: 3px;
+  color: #848d9e;
+  font-size: 9px;
+}
+
 @media (max-width: 1100px) {
   .command-alerts {
     grid-template-columns: repeat(2, minmax(0, 1fr));

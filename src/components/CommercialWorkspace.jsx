@@ -113,8 +113,21 @@ function DetailPanel({ item, tab, timeline, onEditLead, onAddTimelineNote, onOpe
         <div className="entity-detail__stats">
           <span><small>Valor total</small><strong>{formatCurrency(item.value)}</strong></span>
           <span><small>Forecast</small><strong>{formatCurrency(item.forecast)}</strong></span>
-          <span><small>Saúde</small><strong>{item.health}%</strong></span>
+          <span><small>Saúde</small><strong>{item.health}/100</strong></span>
         </div>
+        <section className="entity-detail__block">
+          <h3>Health score explicável</h3>
+          <div className="entity-health-grid">
+            <div>
+              <span className="eyebrow">Contribuições</span>
+              {(item.healthDetails?.contributions || []).map((entry) => <p key={entry}>{entry}</p>)}
+            </div>
+            <div>
+              <span className="eyebrow">Penalidades</span>
+              {(item.healthDetails?.penalties || []).map((entry) => <p key={entry}>{entry}</p>)}
+            </div>
+          </div>
+        </section>
         <section className="entity-detail__block">
           <h3>Oportunidades</h3>
           {item.deals.map((deal) => (
@@ -123,6 +136,11 @@ function DetailPanel({ item, tab, timeline, onEditLead, onAddTimelineNote, onOpe
               <em>{formatCurrency(deal.value)}</em>
             </button>
           ))}
+        </section>
+        <section className="entity-detail__block">
+          <h3>Plano da conta</h3>
+          <div className="entity-mini-row"><span><strong>Objetivo</strong><small>{item.openDeals.length ? 'Converter pipeline aberto com próximo passo claro.' : 'Proteger relacionamento e mapear expansão.'}</small></span><em>{item.segment}</em></div>
+          <div className="entity-mini-row"><span><strong>Risco</strong><small>{item.healthDetails?.penalties?.[0] || 'Sem risco operacional relevante.'}</small></span><em>{item.health}/100</em></div>
         </section>
         <EntityTimeline
           compact

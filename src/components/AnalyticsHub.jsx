@@ -17,7 +17,7 @@ function Metric({ label, value, detail, tone }) {
   return <div className={`analytics-metric analytics-metric--${tone}`}><small>{label}</small><strong>{value}</strong><span>{detail}</span></div>
 }
 
-export default function AnalyticsHub({ leads, employees }) {
+export default function AnalyticsHub({ leads, employees, tasks = [] }) {
   const [tab, setTab] = useState('leads')
   const [ownerFilter, setOwnerFilter] = useState('Todos')
   const [sourceFilter, setSourceFilter] = useState('Todos')
@@ -57,12 +57,13 @@ export default function AnalyticsHub({ leads, employees }) {
   const forecast = Math.round(data.open.reduce((total, lead) => {
     return total + Number(lead.valorEstimado || 0) * (getLeadProbability(lead) / 100)
   }, 0))
-  const reasons = [
-    ['Orçamento adiado', 42],
-    ['Sem prioridade', 26],
-    ['Concorrência', 19],
-    ['Sem retorno', 13],
-  ]
+  const reasons = Object.entries(data.losses.reduce((result, lead) => ({
+    ...result,
+    [lead.motivoPerda || 'Sem motivo registrado']: (result[lead.motivoPerda || 'Sem motivo registrado'] || 0) + 1,
+  }), {})).sort((a, b) => b[1] - a[1])
+  const clientsWithFollowUp = data.clients.filter((client) =>
+    tasks.some((task) => task.relatedLeadId === client.id && task.status !== 'Concluído'),
+  ).length
 
   return (
     <section className="analytics-hub">
@@ -111,7 +112,7 @@ export default function AnalyticsHub({ leads, employees }) {
             <Metric label="Clientes ativos" value={data.clients.length} detail="negócios ganhos" tone="green" />
             <Metric label="Receita conquistada" value={formatCurrency(data.sum(data.clients))} detail="valor fechado" tone="violet" />
             <Metric label="Ticket médio" value={formatCurrency(data.clients.length ? data.sum(data.clients) / data.clients.length : 0)} detail="por cliente" tone="blue" />
-            <Metric label="Retenção" value="94%" detail="indicador projetado" tone="orange" />
+            <Metric label="Com follow-up ativo" value={clientsWithFollowUp} detail="clientes com tarefa aberta" tone="orange" />
           </div>
           <div className="analytics-layout">
             <article className="analytics-card analytics-card--wide"><header><span className="eyebrow">Carteira</span><h3>Receita por responsável</h3></header><div className="owner-performance">{data.owners.map((owner, index) => <div key={owner.name}><PixelAvatar avatar={owner.employee.avatar} size={32} animated={index < 3} /><span>{owner.name}</span><div><i style={{ width: `${Math.max(4, owner.value / Math.max(data.owners[0]?.value || 1, 1) * 100)}%`, '--delay': `${index * 80}ms` }} /></div><strong>{formatCurrency(owner.value)}</strong></div>)}</div></article>
@@ -129,7 +130,7 @@ export default function AnalyticsHub({ leads, employees }) {
             <Metric label="Retomadas sugeridas" value={data.losses.length} detail="para próximo trimestre" tone="blue" />
           </div>
           <div className="analytics-layout">
-            <article className="analytics-card analytics-card--wide"><header><span className="eyebrow">Diagnóstico</span><h3>Motivos de perda</h3></header><div className="loss-reasons">{reasons.map(([reason, value]) => <div key={reason}><span>{reason}</span><div><i style={{ width: `${value}%` }} /></div><strong>{value}%</strong></div>)}</div></article>
+            <article className="analytics-card analytics-card--wide"><header><span className="eyebrow">Diagnóstico</span><h3>Motivos de perda</h3></header><div className="loss-reasons">{reasons.length ? reasons.map(([reason, value]) => <div key={reason}><span>{reason}</span><div><i style={{ width: `${Math.max(12, (value / Math.max(data.losses.length, 1)) * 100)}%` }} /></div><strong>{value}</strong></div>) : <p>Nenhuma perda registrada nesta seleção.</p>}</div></article>
             <article className="analytics-card loss-recovery"><header><span className="eyebrow">Recuperação</span><h3>Próximas retomadas</h3></header>{data.losses.length ? data.losses.map((lead) => <div key={lead.id}><strong>{lead.empresa}</strong><span>{lead.notas}</span><button type="button">Planejar retomada</button></div>) : <p>Nenhuma perda registrada.</p>}</article>
           </div>
         </>
@@ -139,8 +140,8 @@ export default function AnalyticsHub({ leads, employees }) {
         <>
           <div className="analytics-metrics">
             <Metric label="Forecast ponderado" value={formatCurrency(forecast)} detail="baseado em etapa" tone="violet" />
-            <Metric label="Conservador" value={formatCurrency(Math.round(forecast * 0.72))} detail="cenário seguro" tone="blue" />
-            <Metric label="Agressivo" value={formatCurrency(Math.round(forecast * 1.28))} detail="com aceleração" tone="green" />
+            <Metric label="Conservador" value={formatCurrency(Math.round(forecast * 0.72))} detail="simulação sobre forecast" tone="blue" />
+            <Metric label="Agressivo" value={formatCurrency(Math.round(forecast * 1.28))} detail="simulação sobre forecast" tone="green" />
             <Metric label="Pipeline aberto" value={formatCurrency(data.sum(data.open))} detail={`${data.open.length} oportunidades`} tone="orange" />
           </div>
           <div className="analytics-layout">

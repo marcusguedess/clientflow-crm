@@ -1,21 +1,16 @@
-import { buildBusinessAlerts, getWeightedForecast } from '../utils/businessInsights'
+import { buildBusinessAlerts, buildPipelineMetrics, DEFAULT_GOAL_CONFIG } from '../domain/metrics'
 import { formatCurrency } from '../utils/formatCurrency'
 
-export default function BusinessCommandCenter({ leads, tasks, onNavigate }) {
+export default function BusinessCommandCenter({ leads, tasks, goalConfig = DEFAULT_GOAL_CONFIG, onNavigate }) {
   const alerts = buildBusinessAlerts(leads, tasks)
   const openLeads = leads.filter((lead) => !['Fechado', 'Perdido'].includes(lead.status))
-  const wonRevenue = leads
-    .filter((lead) => lead.status === 'Fechado')
-    .reduce((total, lead) => total + Number(lead.valorEstimado || 0), 0)
-  const weightedForecast = getWeightedForecast(leads)
+  const metrics = buildPipelineMetrics(leads, tasks, goalConfig)
+  const wonRevenue = metrics.wonRevenue
+  const weightedForecast = metrics.weightedForecast
   const enterpriseOpen = openLeads.filter((lead) => lead.segmento === 'Enterprise')
-  const pipelineValue = openLeads.reduce((total, lead) => total + Number(lead.valorEstimado || 0), 0)
-  const goal = 250000
-  const coverage = Math.round(((wonRevenue + pipelineValue) / goal) * 100)
-  const forecastProgress = Math.min(100, Math.round(((wonRevenue + weightedForecast) / goal) * 100))
-  const atRiskValue = openLeads
-    .filter((lead) => !lead.proximoPasso || ['Novo Lead', 'Contato Feito'].includes(lead.status))
-    .reduce((total, lead) => total + Number(lead.valorEstimado || 0), 0)
+  const coverage = metrics.goalCoverage
+  const forecastProgress = Math.min(100, metrics.forecastCoverage)
+  const atRiskValue = metrics.atRiskValue
   const scenarioValues = [
     { label: 'Conservador', value: wonRevenue + weightedForecast * 0.72 },
     { label: 'Base', value: wonRevenue + weightedForecast },
@@ -53,7 +48,7 @@ export default function BusinessCommandCenter({ leads, tasks, onNavigate }) {
               <span className="eyebrow">Cobertura da meta</span>
               <strong>{coverage}%</strong>
             </div>
-            <small>{formatCurrency(wonRevenue + pipelineValue)} sobre {formatCurrency(goal)}</small>
+            <small>{formatCurrency(wonRevenue + metrics.openPipeline)} sobre {formatCurrency(metrics.goal)}</small>
           </header>
           <div className="command-coverage__track">
             <i style={{ width: `${Math.min(100, coverage)}%` }} />

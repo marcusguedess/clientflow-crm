@@ -1,4 +1,4 @@
-import { PIPELINE_STATUSES } from '../data/seedData'
+import { PIPELINE_STATUSES } from '../data/seedData.js'
 
 const MAX_TEXT = 2000
 const LEAD_FIELDS = [

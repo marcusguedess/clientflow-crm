@@ -1,9 +1,16 @@
 import { PIPELINE_STATUSES } from '../data/seedData'
+import { analyzeDealRisk, daysBetween } from '../domain/metrics'
 import { formatCurrency } from '../utils/formatCurrency'
 import PixelAvatar from './PixelAvatar'
 import StatusBadge from './StatusBadge'
 
-export default function LeadCard({ lead, owner, onEdit, onDelete, onStatusChange, compact = false }) {
+const riskLabel = {
+  low: 'Risco baixo',
+  medium: 'Atenção',
+  high: 'Risco alto',
+}
+
+export default function LeadCard({ lead, owner, tasks = [], onEdit, onDelete, onStatusChange, compact = false }) {
   const initials = lead.nome
     .split(' ')
     .slice(0, 2)
@@ -16,6 +23,9 @@ export default function LeadCard({ lead, owner, onEdit, onDelete, onStatusChange
   const closeDateLabel = lead.previsaoFechamento
     ? new Date(`${lead.previsaoFechamento}T12:00:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
     : 'Sem previsão'
+  const risk = analyzeDealRisk(lead, tasks)
+  const age = lead.criadoEm ? daysBetween(lead.criadoEm, new Date()) : 0
+  const activeTask = tasks.find((task) => task.relatedLeadId === lead.id && task.status !== 'Concluído')
 
   return (
     <article className={`lead-card ${compact ? 'lead-card--compact' : ''}`}>
@@ -75,6 +85,12 @@ export default function LeadCard({ lead, owner, onEdit, onDelete, onStatusChange
           <span>{nextStepLabel}</span>
         </div>
       )}
+
+      <div className={`lead-card__signals lead-card__signals--risk lead-card__signals--${risk.level}`}>
+        <span>{riskLabel[risk.level]}</span>
+        <span>{age} dias</span>
+        <span>{activeTask ? activeTask.title : 'Sem tarefa ativa'}</span>
+      </div>
 
       <label className="status-control">
         <span>Mover para</span>
