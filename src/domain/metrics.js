@@ -123,7 +123,11 @@ export function analyzeDealRisk(lead, tasks = [], today = new Date()) {
 export function calculateAccountHealth(account, tasks = [], today = new Date()) {
   const openDeals = account.deals?.filter((deal) => !['Fechado', 'Perdido'].includes(deal.stage || deal.status)) || []
   const wonDeals = account.deals?.filter((deal) => (deal.stage || deal.status) === 'Fechado') || []
-  const accountTasks = tasks.filter((task) => account.deals?.some((deal) => deal.id === task.relatedLeadId))
+  const accountTasks = tasks.filter((task) => account.deals?.some((deal) =>
+    deal.id === task.relatedLeadId ||
+    deal.id === task.dealId ||
+    deal.sourceLeadId === task.relatedLeadId,
+  ))
   const overdueTasks = accountTasks.filter((task) => task.status !== 'Concluído' && task.dueDate && toDate(task.dueDate) < today)
   const missingNextStep = openDeals.filter((deal) => !deal.nextStep && !deal.proximoPasso)
   const overdueNextSteps = openDeals.filter((deal) => {

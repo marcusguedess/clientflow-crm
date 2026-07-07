@@ -26,7 +26,9 @@ import { seedLeads } from './data/seedData'
 import { seedEmployees, seedMessages, seedPosts } from './data/teamData'
 import { seedActivities, seedTasks } from './data/workData'
 import { buildCitySignals } from './domain/clientflowBridge'
+import { CRM_STORAGE_KEYS, normalizeTaskRelations } from './domain/crmEntities'
 import { createDomainEvent, DOMAIN_EVENT_TYPES, domainEventsToTimelineEvents } from './domain/events'
+import { buildLocalCrmSnapshot, createLocalCrmRepository, shouldUpdateCrmSnapshot } from './domain/localCrmRepository'
 import { analyzeDealRisk, DEFAULT_GOAL_CONFIG, normalizeGoalConfig } from './domain/metrics'
 import { normalizeTask } from './domain/tasks'
 import { useLocalStorage } from './hooks/useLocalStorage'
@@ -58,6 +60,18 @@ export default function App() {
     value && typeof value === 'object' && !Array.isArray(value) ? value : {},
   )
   const [tasks, setTasks] = usePersistentState('clientflow-tasks-v1', seedTasks, sanitizeTasks)
+  const [accounts, setAccounts] = usePersistentState(CRM_STORAGE_KEYS.accounts, [], (value) =>
+    Array.isArray(value) ? value.filter((account) => account?.id && account?.name) : [],
+  )
+  const [contacts, setContacts] = usePersistentState(CRM_STORAGE_KEYS.contacts, [], (value) =>
+    Array.isArray(value) ? value.filter((contact) => contact?.id && contact?.accountId && contact?.name) : [],
+  )
+  const [deals, setDeals] = usePersistentState(CRM_STORAGE_KEYS.deals, [], (value) =>
+    Array.isArray(value) ? value.filter((deal) => deal?.id && deal?.accountId && deal?.title) : [],
+  )
+  const [crmActivities, setCrmActivities] = usePersistentState(CRM_STORAGE_KEYS.activities, [], (value) =>
+    Array.isArray(value) ? value.filter((activity) => activity?.id && activity?.type && activity?.at) : [],
+  )
   const [domainEvents, setDomainEvents] = usePersistentState('clientflow-domain-events-v1', [], (value) =>
     Array.isArray(value)
       ? value.slice(0, 250).filter((event) => event?.id && event?.type && event?.at)
@@ -105,6 +119,7 @@ export default function App() {
   )
   const [soundEnabled, setSoundEnabled] = usePersistentState('clientflow-sound-v1', true, (value) => value !== false)
   const actionLogRef = useRef({})
+  const crmMigrationSignatureRef = useRef('')
   const currentEmployee = employees[0]
   const timelineActivities = useMemo(() =>
     [
@@ -114,6 +129,40 @@ export default function App() {
     ].sort((a, b) => new Date(b.at) - new Date(a.at)),
   [domainEvents, timelineNotes])
   const citySignals = useMemo(() => buildCitySignals(domainEvents), [domainEvents])
+  const crmData = useMemo(() => ({ accounts, contacts, deals, activities: crmActivities }), [accounts, contacts, deals, crmActivities])
+  const crmRepository = useMemo(() => createLocalCrmRepository(crmData), [crmData])
+  const crmMigrationSignature = useMemo(() => JSON.stringify({
+    leads: leads.map((lead) => [
+      lead.id,
+      lead.empresa,
+      lead.email,
+      lead.status,
+      lead.valorEstimado,
+      lead.responsavel,
+      lead.probabilidade,
+      lead.previsaoFechamento,
+      lead.proximoPasso,
+    ]),
+    timeline: timelineActivities.map((activity) => [activity.id, activity.type, activity.at, activity.dealId]),
+  }), [leads, timelineActivities])
+
+  useEffect(() => {
+    if (crmMigrationSignatureRef.current === crmMigrationSignature) return
+    crmMigrationSignatureRef.current = crmMigrationSignature
+    const nextSnapshot = buildLocalCrmSnapshot({
+      leads,
+      accounts,
+      contacts,
+      deals,
+      activities: crmActivities,
+      timelineEvents: timelineActivities,
+    })
+    if (!shouldUpdateCrmSnapshot(crmData, nextSnapshot)) return
+    setAccounts(nextSnapshot.accounts)
+    setContacts(nextSnapshot.contacts)
+    setDeals(nextSnapshot.deals)
+    setCrmActivities(nextSnapshot.activities)
+  }, [crmMigrationSignature])
 
   useEffect(() => {
     if (respectState.date !== new Date().toISOString().slice(0, 10)) {
@@ -421,10 +470,10 @@ export default function App() {
   }
 
   function createTask(task, defaults = {}) {
-    const nextTask = normalizeTask(task, {
+    const nextTask = normalizeTaskRelations(normalizeTask(task, {
       owner: currentEmployee?.nome || 'Sem responsável',
       ...defaults,
-    })
+    }), crmRepository.getDeals())
     setTasks((current) => [nextTask, ...current])
     emitDomainEvent(DOMAIN_EVENT_TYPES.TASK_CREATED, {
       taskId: nextTask.id,
@@ -516,6 +565,10 @@ export default function App() {
         posts,
         socialStats,
         tasks,
+        accounts,
+        contacts,
+        deals,
+        crmActivities,
         timelineNotes,
         domainEvents,
         goalConfig,
@@ -545,6 +598,10 @@ export default function App() {
       setPosts(sanitizePosts(data.posts, employeeIds, seedPosts))
       if (data.socialStats && typeof data.socialStats === 'object') setSocialStats(data.socialStats)
       setTasks(sanitizeTasks(data.tasks, seedTasks))
+      if (Array.isArray(data.accounts)) setAccounts(data.accounts)
+      if (Array.isArray(data.contacts)) setContacts(data.contacts)
+      if (Array.isArray(data.deals)) setDeals(data.deals)
+      if (Array.isArray(data.crmActivities)) setCrmActivities(data.crmActivities)
       if (Array.isArray(data.timelineNotes)) setTimelineNotes(data.timelineNotes)
       if (Array.isArray(data.domainEvents)) setDomainEvents(data.domainEvents)
       if (data.goalConfig && typeof data.goalConfig === 'object') setGoalConfig(normalizeGoalConfig(data.goalConfig))
@@ -626,6 +683,7 @@ export default function App() {
               leads={leads}
               tasks={tasks}
               activities={timelineActivities}
+              crmData={crmData}
               employees={employees}
               onEditLead={openEditLead}
               onCreateLead={openNewLead}
@@ -696,7 +754,7 @@ export default function App() {
             />
           )}
 
-          {activeView === 'clients' && <ClientsPage leads={leads} employees={employees} tasks={tasks} activities={timelineActivities} onEdit={openEditLead} />}
+          {activeView === 'clients' && <ClientsPage leads={leads} employees={employees} tasks={tasks} activities={timelineActivities} crmData={crmData} onEdit={openEditLead} />}
 
           {activeView === 'activities' && <ActivitiesPage activities={timelineActivities} tasks={tasks} leads={leads} />}
 
