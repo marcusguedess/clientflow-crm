@@ -14,17 +14,17 @@ Este roadmap registra o estado atual e protege a sequência de execução. A uni
 - Migração local-first a partir de leads.
 - Compatibilidade com `relatedLeadId`.
 - Customer 360 usando entidades reais quando disponíveis.
+- CI e quality gates para testes e build.
 
 ## Fase atual
 
-1. CI e quality gates.
-2. Deal Command Layer.
-3. Pipeline consumindo Deals reais.
-4. Drag-and-drop acessível no Pipeline.
-5. Regras inteligentes de transição.
-6. Rotas e deep links.
-7. Modo demo público.
-8. Deploy estável na Vercel.
+1. Deal Command Layer.
+2. Pipeline consumindo Deals reais.
+3. Drag-and-drop acessível no Pipeline.
+4. Regras inteligentes de transição.
+5. Rotas e deep links.
+6. Modo demo público.
+7. Deploy estável na Vercel.
 
 NÃO IMPLEMENTAR CITY NESTA EXECUÇÃO.
 
