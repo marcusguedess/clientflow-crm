@@ -27,9 +27,10 @@ import { seedEmployees, seedMessages, seedPosts } from './data/teamData'
 import { seedActivities, seedTasks } from './data/workData'
 import { buildCitySignals } from './domain/clientflowBridge'
 import { CRM_STORAGE_KEYS, normalizeTaskRelations } from './domain/crmEntities'
+import { createDeal, moveDeal, scheduleFollowUp, updateDeal } from './domain/dealCommands'
 import { createDomainEvent, DOMAIN_EVENT_TYPES, domainEventsToTimelineEvents } from './domain/events'
 import { buildLocalCrmSnapshot, createLocalCrmRepository, shouldUpdateCrmSnapshot } from './domain/localCrmRepository'
-import { analyzeDealRisk, DEFAULT_GOAL_CONFIG, normalizeGoalConfig } from './domain/metrics'
+import { DEFAULT_GOAL_CONFIG, normalizeGoalConfig } from './domain/metrics'
 import { normalizeTask } from './domain/tasks'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import { usePersistentState } from './hooks/usePersistentState'
@@ -131,6 +132,13 @@ export default function App() {
   const citySignals = useMemo(() => buildCitySignals(domainEvents), [domainEvents])
   const crmData = useMemo(() => ({ accounts, contacts, deals, activities: crmActivities }), [accounts, contacts, deals, crmActivities])
   const crmRepository = useMemo(() => createLocalCrmRepository(crmData), [crmData])
+  const crmCommandState = useMemo(() => ({
+    leads,
+    accounts,
+    contacts,
+    deals,
+    tasks,
+  }), [accounts, contacts, deals, leads, tasks])
   const crmMigrationSignature = useMemo(() => JSON.stringify({
     leads: leads.map((lead) => [
       lead.id,
@@ -226,6 +234,35 @@ export default function App() {
     return event
   }
 
+  function applyDealCommand(result, successMessage) {
+    if (!result.ok) {
+      setToast({ message: result.error || 'Não foi possível atualizar a oportunidade.', tone: 'warning' })
+      return false
+    }
+    setLeads(result.state.leads)
+    setAccounts(result.state.accounts)
+    setContacts(result.state.contacts)
+    setDeals(result.state.deals)
+    setTasks(result.state.tasks)
+    result.events.forEach((event) => emitDomainEvent(event.type, event.payload))
+    if (successMessage) setToast({ message: successMessage })
+    return true
+  }
+
+  function leadToDealPatch(lead) {
+    return {
+      legacyLead: lead,
+      title: lead.empresa,
+      stage: lead.status,
+      value: lead.valorEstimado,
+      probability: lead.probabilidade,
+      expectedCloseDate: lead.previsaoFechamento,
+      nextStep: lead.proximoPasso,
+      owner: lead.responsavel,
+      lossReason: lead.motivoPerda,
+    }
+  }
+
   function handleCityEvent(message, payload = {}) {
     setToast({ message })
     emitDomainEvent(DOMAIN_EVENT_TYPES.CITY_INTERACTION, {
@@ -273,102 +310,16 @@ export default function App() {
       setToast({ message: 'Já existe um lead com este email.', tone: 'warning' })
       return
     }
-    if (editingLead) {
-      setLeads((current) =>
-        current.map((lead) =>
-          lead.id === editingLead.id
-            ? safeLeadData
-            : lead,
-        ),
-      )
-      emitDomainEvent(DOMAIN_EVENT_TYPES.DEAL_UPDATED, {
-        dealId: safeLeadData.id,
-        company: safeLeadData.empresa,
-        contactName: safeLeadData.nome,
-        owner: safeLeadData.responsavel,
-        detail: `${safeLeadData.empresa} atualizada em ${safeLeadData.status}.`,
-      })
-      if (editingLead.status !== safeLeadData.status) {
-        emitDomainEvent(DOMAIN_EVENT_TYPES.DEAL_STAGE_CHANGED, {
-          dealId: safeLeadData.id,
-          company: safeLeadData.empresa,
-          contactName: safeLeadData.nome,
-          owner: safeLeadData.responsavel,
-          from: editingLead.status,
-          to: safeLeadData.status,
-          risk: analyzeDealRisk(safeLeadData, tasks),
-          detail: `${editingLead.status} → ${safeLeadData.status}`,
-        })
-      }
-    } else {
-      setLeads((current) => [safeLeadData, ...current])
-      emitDomainEvent(DOMAIN_EVENT_TYPES.DEAL_CREATED, {
-        dealId: safeLeadData.id,
-        company: safeLeadData.empresa,
-        contactName: safeLeadData.nome,
-        owner: safeLeadData.responsavel,
-        detail: `${safeLeadData.empresa} entrou no pipeline.`,
-      })
-    }
-    const statusChanged = !editingLead || editingLead.status !== safeLeadData.status
-    if (statusChanged && safeLeadData.status === 'Fechado') {
-      emitDomainEvent(DOMAIN_EVENT_TYPES.DEAL_WON, {
-        dealId: safeLeadData.id,
-        company: safeLeadData.empresa,
-        contactName: safeLeadData.nome,
-        owner: safeLeadData.responsavel,
-        value: Number(safeLeadData.valorEstimado || 0),
-      })
-    }
-    if (statusChanged && safeLeadData.status === 'Perdido') {
-      emitDomainEvent(DOMAIN_EVENT_TYPES.DEAL_LOST, {
-        dealId: safeLeadData.id,
-        company: safeLeadData.empresa,
-        contactName: safeLeadData.nome,
-        owner: safeLeadData.responsavel,
-        reason: safeLeadData.motivoPerda || 'Sem motivo registrado',
-      })
-    }
-    setToast({ message: editingLead ? 'Lead atualizado com segurança.' : 'Novo lead criado.' })
+    const result = editingLead
+      ? updateDeal(crmCommandState, editingLead.id, leadToDealPatch(safeLeadData))
+      : createDeal(crmCommandState, safeLeadData)
+    if (!applyDealCommand(result, editingLead ? 'Oportunidade atualizada com segurança.' : 'Nova oportunidade criada.')) return
     setIsFormOpen(false)
     setEditingLead(null)
   }
 
   function changeLeadStatus(id, status) {
-    const currentLead = leads.find((lead) => lead.id === id)
-    const nextLead = currentLead ? { ...currentLead, status } : null
-    setLeads((current) => current.map((lead) => (lead.id === id ? { ...lead, status } : lead)))
-    if (nextLead && currentLead.status !== status) {
-      emitDomainEvent(DOMAIN_EVENT_TYPES.DEAL_STAGE_CHANGED, {
-        dealId: id,
-        company: nextLead.empresa,
-        contactName: nextLead.nome,
-        owner: nextLead.responsavel,
-        from: currentLead.status,
-        to: status,
-        risk: analyzeDealRisk(nextLead, tasks),
-        detail: `${currentLead.status} → ${status}`,
-      })
-      if (status === 'Fechado') {
-        emitDomainEvent(DOMAIN_EVENT_TYPES.DEAL_WON, {
-          dealId: id,
-          company: nextLead.empresa,
-          contactName: nextLead.nome,
-          owner: nextLead.responsavel,
-          value: Number(nextLead.valorEstimado || 0),
-        })
-      }
-      if (status === 'Perdido') {
-        emitDomainEvent(DOMAIN_EVENT_TYPES.DEAL_LOST, {
-          dealId: id,
-          company: nextLead.empresa,
-          contactName: nextLead.nome,
-          owner: nextLead.responsavel,
-          reason: nextLead.motivoPerda || 'Sem motivo registrado',
-        })
-      }
-    }
-    setToast({ message: `Lead movido para ${status}.` })
+    applyDealCommand(moveDeal(crmCommandState, id, status), `Oportunidade movida para ${status}.`)
   }
 
   function confirmDelete() {
@@ -477,7 +428,7 @@ export default function App() {
     setTasks((current) => [nextTask, ...current])
     emitDomainEvent(DOMAIN_EVENT_TYPES.TASK_CREATED, {
       taskId: nextTask.id,
-      dealId: nextTask.relatedLeadId,
+      dealId: nextTask.dealId || nextTask.relatedLeadId,
       title: nextTask.title,
       owner: nextTask.owner,
       detail: `${nextTask.title} · ${nextTask.owner}`,
@@ -488,7 +439,7 @@ export default function App() {
 
   function createCommunicationFollowUp(lead, source) {
     const dueDate = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)
-    const task = createTask({
+    const result = scheduleFollowUp(crmCommandState, lead.id, {
       title: `Follow-up ${lead.empresa}`,
       description: `Retomar contexto iniciado no ${source} com ${lead.nome}.`,
       status: 'Planejado',
@@ -496,17 +447,9 @@ export default function App() {
       priority: Number(lead.valorEstimado || 0) >= 50000 ? 'Alta' : 'Média',
       dueDate,
       sticker: source === 'chat' ? '💬' : '✉️',
-      relatedLeadId: lead.id,
-    })
-    emitDomainEvent(DOMAIN_EVENT_TYPES.FOLLOW_UP_SCHEDULED, {
-      taskId: task.id,
-      dealId: lead.id,
-      company: lead.empresa,
-      contactName: lead.nome,
-      owner: lead.responsavel || currentEmployee.nome,
-      title: task.title,
       detail: `Follow-up criado a partir do ${source}.`,
     })
+    applyDealCommand(result, 'Follow-up criado no Flowboard.')
   }
 
   function moveTask(id, status) {
