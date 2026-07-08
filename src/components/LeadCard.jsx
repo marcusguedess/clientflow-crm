@@ -23,9 +23,17 @@ export default function LeadCard({ lead, owner, tasks = [], onEdit, onDelete, on
   const closeDateLabel = lead.previsaoFechamento
     ? new Date(`${lead.previsaoFechamento}T12:00:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
     : 'Sem previsão'
-  const risk = analyzeDealRisk(lead, tasks)
-  const age = lead.criadoEm ? daysBetween(lead.criadoEm, new Date()) : 0
-  const activeTask = tasks.find((task) => task.relatedLeadId === lead.id && task.status !== 'Concluído')
+  const risk = lead.risk || analyzeDealRisk(lead, tasks)
+  const age = Number.isFinite(lead.ageDays) ? lead.ageDays : lead.criadoEm ? daysBetween(lead.criadoEm, new Date()) : 0
+  const activeTask = lead.activeTaskTitle
+    ? { title: lead.activeTaskTitle }
+    : tasks.find((task) =>
+      task.status !== 'Concluído' && (
+        task.relatedLeadId === lead.id ||
+        task.dealId === lead.dealId ||
+        task.relatedLeadId === lead.sourceLeadId
+      ),
+    )
 
   return (
     <article className={`lead-card ${compact ? 'lead-card--compact' : ''}`}>
@@ -35,6 +43,7 @@ export default function LeadCard({ lead, owner, tasks = [], onEdit, onDelete, on
           <div>
             <strong>{lead.nome}</strong>
             <span>{lead.empresa}</span>
+            {lead.primaryContactName && lead.primaryContactName !== lead.nome && <small>{lead.primaryContactName}</small>}
             {owner?.nome && <small className="lead-owner">Resp. {owner.nome}</small>}
           </div>
         </div>

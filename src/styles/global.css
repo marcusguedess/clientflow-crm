@@ -788,6 +788,74 @@ h2 {
   padding: 2px 2px 18px;
 }
 
+.pipeline-source {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 14px;
+  border: 1px solid #e1e5ed;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.pipeline-source span {
+  color: #283248;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.pipeline-source small {
+  color: #7b8495;
+  font-size: 11px;
+}
+
+.pipeline-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.pipeline-filters label {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.pipeline-filters span {
+  color: #7b8495;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.pipeline-filters select {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid #dce1ea;
+  border-radius: 8px;
+  color: #283248;
+  background: #fff;
+  font-weight: 700;
+}
+
+@media(max-width:900px){
+  .pipeline-source {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .pipeline-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media(max-width:560px){
+  .pipeline-filters {
+    grid-template-columns: 1fr;
+  }
+}
+
 .pipeline-columns {
   display: grid;
   grid-template-columns: repeat(6, minmax(250px, 1fr));

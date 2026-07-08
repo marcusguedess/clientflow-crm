@@ -1,4 +1,4 @@
-import { calculateAccountHealth, getDealProbability } from '../domain/metrics'
+import { calculateAccountHealth, getDealProbability } from '../domain/metrics.js'
 
 function normalizeDate(value) {
   return Number.isNaN(Date.parse(value)) ? null : value
