@@ -16,15 +16,15 @@ Este roadmap registra o estado atual e protege a sequência de execução. A uni
 - Customer 360 usando entidades reais quando disponíveis.
 - CI e quality gates para testes e build.
 - Deal Command Layer para centralizar criação, atualização, movimentação e follow-ups de oportunidades.
+- Pipeline consumindo Deals, Accounts e Contacts reais com fallback legado.
 
 ## Fase atual
 
-1. Pipeline consumindo Deals reais.
-2. Drag-and-drop acessível no Pipeline.
-3. Regras inteligentes de transição.
-4. Rotas e deep links.
-5. Modo demo público.
-6. Deploy estável na Vercel.
+1. Drag-and-drop acessível no Pipeline.
+2. Regras inteligentes de transição.
+3. Rotas e deep links.
+4. Modo demo público.
+5. Deploy estável na Vercel.
 
 NÃO IMPLEMENTAR CITY NESTA EXECUÇÃO.
 

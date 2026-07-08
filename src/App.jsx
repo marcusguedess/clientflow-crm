@@ -614,6 +614,7 @@ export default function App() {
                 leads={filteredLeads}
                 employees={employees}
                 tasks={tasks}
+                crmData={crmData}
                 onEdit={openEditLead}
                 onDelete={setDeleteTarget}
                 onStatusChange={changeLeadStatus}
